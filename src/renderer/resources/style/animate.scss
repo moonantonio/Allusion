@@ -1,0 +1,17 @@
+@keyframes play {
+  from {
+    left: 0px;
+  }
+  to {
+    left: -402px;
+  }
+}
+
+@keyframes play-reverse {
+  from {
+    left: -402px;
+  }
+  to {
+    left: 0px;
+  }
+}

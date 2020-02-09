@@ -16,7 +16,7 @@ import ImageViewer from './components/ImageViewer';
 import { useWorkerListener } from './ThumbnailGeneration';
 import { DragLayer } from './containers/Outliner/TagPanel';
 
-const SPLASH_SCREEN_TIME = 700;
+const SPLASH_SCREEN_TIME = 2000;
 
 const App = observer(() => {
   const { uiStore } = useContext(StoreContext);
