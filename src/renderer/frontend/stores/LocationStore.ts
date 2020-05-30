@@ -3,7 +3,7 @@ import { action, observable, runInAction } from 'mobx';
 import Backend from '../../backend/Backend';
 import RootStore from './RootStore';
 import { ID, generateId } from '../../entities/ID';
-import { ClientLocation, DEFAULT_LOCATION_ID } from '../../entities/Location';
+import { ClientLocation, DEFAULT_LOCATION_ID, ILocation } from '../../entities/Location';
 import { IFile, ClientFile } from '../../entities/File';
 import { RendererMessenger } from '../../../Messaging';
 import { ClientStringSearchCriteria } from '../../entities/SearchCriteria';
@@ -172,6 +172,22 @@ class LocationStore {
     RendererMessenger.setDownloadPath({ dir });
   }
 
+  async exportLocation(location: ILocation) {
+    await this.backend.exportLocation(location);
+  }
+
+  async importLocation(location: ILocation) {
+    await this.backend.importLocation(location);
+    // TODO: Would be nice to know whether the import changed anything as a toast
+
+    // Check for updated tags
+    this.rootStore.tagStore.init();
+    this.rootStore.tagCollectionStore.init();
+
+    // And files (and their tags)
+    this.rootStore.fileStore.refetch();
+  }
+
   async pathToIFile(path: string, locationId: ID, tagsToAdd?: ID[]): Promise<IFile> {
     return {
       path,
@@ -188,8 +204,15 @@ class LocationStore {
   async addDirectory(path: string, tags: string[] = [], dateAdded = new Date()) {
     const clientDir = new ClientLocation(this, generateId(), path, dateAdded, tags);
     this.addLocation(clientDir);
+
     // The function caller is responsible for handling errors.
-    await this.backend.createLocation(clientDir.serialize());
+    const backLoc = await this.backend.createLocation(clientDir.serialize());
+
+    // If it was imported from an export file, could have received different properties
+    if (backLoc) {
+      AppToaster.show({ message: 'Found Location export!', intent: 'primary' })
+      clientDir.updateFromBackend(backLoc);
+    }
     return clientDir;
   }
 

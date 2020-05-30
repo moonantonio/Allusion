@@ -7,6 +7,11 @@ import { ITagCollection, ROOT_TAG_COLLECTION_ID } from '../entities/TagCollectio
 import { ILocation } from '../entities/Location';
 import { SearchCriteria, IStringSearchCriteria } from '../entities/SearchCriteria';
 
+import Dexie from 'dexie';
+import { exportDB, importInto, ExportOptions, ImportOptions } from 'dexie-export-import';
+import { writeFile, readFile, pathExists } from 'fs-extra';
+import path from 'path';
+
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
  * This helps code organization by enforcing a clear seperation between backend/frontend logic.
@@ -14,6 +19,7 @@ import { SearchCriteria, IStringSearchCriteria } from '../entities/SearchCriteri
  * The backend has access to the database, which is exposed to the frontend through a set of endpoints.
  */
 export default class Backend {
+  private db: Dexie;
   private fileRepository: DBRepository<IFile>;
   private tagRepository: DBRepository<ITag>;
   private tagCollectionRepository: DBRepository<ITagCollection>;
@@ -22,6 +28,7 @@ export default class Backend {
   constructor() {
     // Initialize database tables
     const db = dbInit(dbConfig, DB_NAME);
+    this.db = db;
     this.fileRepository = new DBRepository('files', db);
     this.tagRepository = new DBRepository('tags', db);
     this.tagCollectionRepository = new DBRepository('tagCollections', db);
@@ -42,6 +49,53 @@ export default class Backend {
         color: '',
       });
     }
+  }
+
+  async exportLocation(location: ILocation) {
+    console.log('Backend: Exporting location...', location);
+    const opts: ExportOptions = {
+      prettyJson: true,
+      progressCallback: (prog) => { console.log(prog); return true; },
+      filter: (table, value) => {
+        if (table === this.fileRepository.collectionName) {
+          // Only export files in this location
+          return (value as IFile).locationId === location.id;
+        } else if (table === this.locationRepository.collectionName) {
+          // Only export this location
+          return (value as ILocation).id === location.id;
+        }
+        return true;
+      },
+    };
+
+    const exportBlob = await exportDB(this.db as any, opts); // not sure why db isn't correctly reconized
+    exportBlob.text().then((text) => console.log(JSON.parse(text)));
+    const buf = await exportBlob.arrayBuffer();
+    await writeFile(path.join(location.path, 'allusion.json'), Buffer.from(buf));
+  }
+
+  async importLocation(location: ILocation) {
+    console.log('Backend: Importing location...', location);
+    const opts: ImportOptions = {
+      overwriteValues: true, // todo: only overwrite if modifiedDate is later than our database?
+      progressCallback: (prog) => { console.log(prog); return true; },
+    };
+
+    const exportedData = await readFile(path.join(location.path, 'allusion.json'));
+    const blob = new Blob([exportedData]);
+    blob.text().then((text) => console.log(JSON.parse(text)));
+    await importInto(this.db as any, blob, opts);
+
+    // Todo: check for duplicate / unreferenced entries (tags/files/collections)
+
+    // Todo: return summary of changes (difference)
+
+    // TODO: When creating a location, check if there is an "allusion.json" file, and use that to initialize
+
+    // TODO: If a file is created on two different clients, it will get a unique ID for both of them
+    // This will not be accepted by the bulkPut in the import function; should be manually resolved:
+    // - if error occurs, check manually for duplicate entries and resolve them
+    // - otherwise, provide option to user to replace the collection with the new data, or to keep the current data
   }
 
   async fetchTags(): Promise<ITag[]> {
@@ -159,7 +213,14 @@ export default class Backend {
 
   async createLocation(dir: ILocation) {
     console.log('Backend: Creating watched directory...');
-    return this.locationRepository.create(dir);
+
+    const exportExists = await pathExists(path.join(dir.path, 'allusion.json'));
+    if (exportExists) {
+      console.log('Found export!');
+      this.importLocation(dir);
+    } else {
+      return this.locationRepository.create(dir);
+    }
   }
 
   async saveLocation(dir: ILocation) {

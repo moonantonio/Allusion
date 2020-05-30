@@ -67,6 +67,7 @@
     "@blueprintjs/select": "^3.12.1",
     "chokidar": "^3.0.2",
     "dexie": "^2.0.4",
+    "dexie-export-import": "^1.0.0-rc.2",
     "fs-extra": "^9.0.0",
     "image-size": "^0.8.3",
     "mobx": "^5.15.4",

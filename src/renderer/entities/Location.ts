@@ -108,6 +108,24 @@ export class ClientLocation implements ISerializable<ILocation> {
     }
   }
 
+  /**
+   * Used for updating this Entity if changes are made to the backend outside of this session of the application.
+   * @param backendLoc The file received from the backend
+   */
+  @action.bound updateFromBackend(backendLoc: ILocation): ClientLocation {
+    // make sure our changes aren't sent back to the backend
+    this.autoSave = false;
+
+    this.id = backendLoc.id;
+    this.path = backendLoc.path;
+    this.tagsToAdd.replace(backendLoc.tagsToAdd);
+    this.dateAdded = backendLoc.dateAdded;
+
+    this.autoSave = true;
+
+    return this;
+  }
+
   serialize(): ILocation {
     return {
       id: this.id,
@@ -204,6 +222,7 @@ export class ClientLocation implements ISerializable<ILocation> {
             }
           }
         })
+        // TODO: If 'allusion.json' changes, import location changes
         .on('change', (path: string) => console.log(`File ${path} has been changed`))
         .on('unlink', (path: string) => {
           console.log(`Location "${SysPath.basename(this.path)}": File ${path} has been removed.`);

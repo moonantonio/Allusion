@@ -88,6 +88,22 @@ const LocationTreeContextMenu = ({
         icon={IconSet.FOLDER_CLOSE}
       />
       <MenuItem
+        onClick={() => loc && locationStore.exportLocation(loc)
+          .then(() => AppToaster.show({ message: 'Exported!', intent: 'success' }))
+          .catch((e: Error) => void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }))}
+        text="Export to file"
+        icon="export"
+        disabled={!loc}
+      />
+      <MenuItem
+        onClick={() => loc && locationStore.importLocation(loc)
+          .then(() => AppToaster.show({ message: 'Imported!', intent: 'success' }))
+          .catch((e: Error) => void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }))}
+        text="Import from file"
+        icon="import"
+        disabled={!loc}
+      />
+      <MenuItem
         text="Delete"
         onClick={openDeleteDialog}
         icon={IconSet.DELETE}
