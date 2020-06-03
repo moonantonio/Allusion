@@ -86,6 +86,11 @@ export default class Backend {
     blob.text().then((text) => console.log(JSON.parse(text)));
     await importInto(this.db as any, blob, opts);
 
+    // TODO: a 'isSyncEnabled' field - automatically import/export
+
+    // TODO: Store 'latestSync' date in local storage, per location
+    // we'll inevitably also need features like 'merge tags' and 'merge collections'
+
     // Todo: check for duplicate / unreferenced entries (tags/files/collections)
 
     // Todo: return summary of changes (difference)
