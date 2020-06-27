@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback, useMemo } from 'react';
+import React, { useContext, useState, useCallback, useMemo, useRef } from 'react';
 import fs from 'fs';
 import path from 'path';
 import { observer } from 'mobx-react-lite';
@@ -42,13 +42,29 @@ const Carousel = ({ items }: { items: ClientFile[] }) => {
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       const delta = e.deltaY > 0 ? -1 : 1;
-      setScrollIndex((v) => clamp(v + delta, 0, paddedItems.length - 1));
+      // setScrollIndex((v) => clamp(v + delta, 0, paddedItems.length - 1));
     },
     [paddedItems.length],
   );
 
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const handleScrollerScroll = useCallback(() => {
+    if (scrollerRef.current) {
+      const index = Math.round(scrollerRef.current.scrollTop / 100);
+      setScrollIndex(index);
+    }
+  }, []);
+
   return (
     <div id="carousel" onWheel={handleWheel}>
+      <div
+        id="scroller"
+        onScroll={handleScrollerScroll}
+        ref={scrollerRef}
+      >
+        {/* Fake content: 100px for every image and 400px for the container height */}
+        <div style={{ height: `${(paddedItems.length - 1) * 100 + 400}px` }} />
+      </div>
       {/* Show a stack of the first N images (or fewer) */}
       {paddedItems.slice(scrollIndex, scrollIndex + maxItems).map((file, index) =>
         !file ? null : (

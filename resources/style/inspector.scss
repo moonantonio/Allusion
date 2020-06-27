@@ -116,6 +116,15 @@
   margin: 0;
   height: 400px;
   max-height: 400px;
+  position: relative;
+
+  #scroller {
+    position: absolute;
+    overflow: hidden scroll;
+    width: 100%;
+    max-height: 400px;
+    z-index: 1000;
+  }
 
   @keyframes fade-in {
     0% {
@@ -145,7 +154,7 @@
   // align-items: center;
   // justify-content: center;
 
-  > div {
+  .item {
     width: 100%;
     transition: all 0.2s ease;
     opacity: 1;
@@ -173,8 +182,9 @@
 
         > img {
           transform: scale(calc(0.5 + 0.1 * #{$i})) translateY(calc(32px * #{$i} - 64px));
-          // z-index: calc(5 - #{$i});
+          z-index: calc(10 - #{$i});
           filter: brightness(calc(0.4 + 0.1 * #{$i}));
+          filter: drop-shadow(0px 8px 8px rgba(0, 0, 0, 0.5));
 
           &:hover {
             filter: brightness(calc(0.5 + 0.1 * #{$i}));
