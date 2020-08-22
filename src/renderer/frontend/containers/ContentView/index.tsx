@@ -10,7 +10,7 @@ class ContentViewWithHotkeys extends React.PureComponent<IRootStoreProp> {
   render() {
     return (
       <main>
-        <Searchbar />
+        {/* <Searchbar /> */}
         <Gallery />
       </main>
     );

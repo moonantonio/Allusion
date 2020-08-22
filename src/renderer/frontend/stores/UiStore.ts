@@ -302,7 +302,7 @@ class UiStore {
 
   @action.bound closeQuickSearch() {
     this.isQuickSearchOpen = false;
-    this.clearSearchCriteriaList();
+    // this.clearSearchCriteriaList();
   }
 
   @action.bound openQuickSearch() {
@@ -509,8 +509,9 @@ class UiStore {
   }
 
   /////////////////// Search Actions ///////////////////
-  @action.bound clearSearchCriteriaList() {
+  @action.bound clearSearchCriteriaList(e?: React.MouseEvent) {
     if (this.searchCriteriaList.length > 0) {
+      e?.preventDefault();
       this.searchCriteriaList.clear();
       this.viewAllContent();
     }

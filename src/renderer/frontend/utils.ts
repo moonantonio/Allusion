@@ -300,3 +300,11 @@ export const isDirEmpty = async (dir: string) => {
   const dirContents = await fse.readdir(dir);
   return dirContents.length === 0 || (dirContents.length === 1 && dirContents[0] === '.DS_Store');
 };
+
+// TypeScript utils
+export function isNotNull<T>(arg: T): arg is Exclude<T, null> {
+  return arg !== null;
+}
+export function isNotUndefined<T>(arg: T): arg is Exclude<T, undefined> {
+  return arg !== undefined;
+}

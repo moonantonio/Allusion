@@ -1,6 +1,7 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { observer } from 'mobx-react-lite';
-import { Button, TagInput } from '@blueprintjs/core';
+import { Button, TagInput, FocusStyleManager, Switch } from '@blueprintjs/core';
 import { CSSTransition } from 'react-transition-group';
 import StoreContext, { IRootStoreProp } from '../../contexts/StoreContext';
 import IconSet from 'components/Icons';
@@ -11,75 +12,136 @@ import {
 } from '../../../entities/SearchCriteria';
 import MultiTagSelector from '../../components/MultiTagSelector';
 import { ClientTagCollection } from '../../../entities/TagCollection';
+import { isNotUndefined } from '../../utils';
+import { ItemRenderer, MultiSelect, ItemPredicate } from '@blueprintjs/select';
 
-const QuickSearchList = ({
-  rootStore: { uiStore, tagStore, tagCollectionStore },
-}: IRootStoreProp) => {
-  const selectedItems: (ClientTag | ClientTagCollection)[] = [];
-  uiStore.searchCriteriaList.forEach((c) => {
-    let item;
-    if (c instanceof ClientIDSearchCriteria && c.value.length === 1) {
-      item = tagStore.get(c.value[0]);
-    } else if (c instanceof ClientCollectionSearchCriteria) {
-      item = tagCollectionStore.get(c.collectionId);
-    }
-    if (item) {
-      selectedItems.push(item);
-    }
-  });
+export const QuickSearchList = observer(() => {
+  const { uiStore, tagStore, tagCollectionStore } = useContext(StoreContext);
 
-  const handleSelectTag = (tag: ClientTag) => {
-    uiStore.addSearchCriteria(new ClientIDSearchCriteria('tags', tag.id, tag.name));
-  };
+  const selectedItems = uiStore.searchCriteriaList
+    .map((c) =>
+      c instanceof ClientIDSearchCriteria && c.value.length === 1
+        ? tagStore.get(c.value[0])
+        : c instanceof ClientCollectionSearchCriteria
+        ? tagCollectionStore.get(c.collectionId)
+        : undefined,
+    )
+    .filter(isNotUndefined);
 
-  const handleSelectCol = (col: ClientTagCollection) => {
-    uiStore.addSearchCriteria(
-      new ClientCollectionSearchCriteria(col.id, col.getTagsRecursively(), col.name),
-    );
-  };
+  const handleSelectTag = useCallback(
+    (tag: ClientTag) => {
+      uiStore.addSearchCriteria(new ClientIDSearchCriteria('tags', tag.id, tag.name));
+    },
+    [uiStore],
+  );
 
-  const handleDeselectTag = (tag: ClientTag) => {
-    const crit = uiStore.searchCriteriaList.find(
-      (c) => c instanceof ClientIDSearchCriteria && c.value.includes(tag.id),
-    );
-    if (crit) {
-      uiStore.removeSearchCriteria(crit);
-    }
-  };
+  const handleSelectCol = useCallback(
+    (col: ClientTagCollection) => {
+      uiStore.addSearchCriteria(
+        new ClientCollectionSearchCriteria(col.id, col.getTagsRecursively(), col.name),
+      );
+    },
+    [uiStore],
+  );
 
-  const handleDeselectCol = (col: ClientTagCollection) => {
-    const crit = uiStore.searchCriteriaList.find(
-      (c) => c instanceof ClientCollectionSearchCriteria && c.collectionId === col.id,
-    );
-    if (crit) {
-      uiStore.removeSearchCriteria(crit);
-    }
-  };
+  const handleDeselectTag = useCallback(
+    (tag: ClientTag) => {
+      const crit = uiStore.searchCriteriaList.find(
+        (c) => c instanceof ClientIDSearchCriteria && c.value.includes(tag.id),
+      );
+      if (crit) {
+        uiStore.removeSearchCriteria(crit);
+      }
+    },
+    [uiStore],
+  );
 
-  const handleCloseSearch = (e: React.KeyboardEvent) => {
-    if (e.key.toLowerCase() === uiStore.hotkeyMap.closeSearch) {
-      e.preventDefault();
-      // Prevent react update on unmounted component while searchbar is closing
+  const handleDeselectCol = useCallback(
+    (col: ClientTagCollection) => {
+      const crit = uiStore.searchCriteriaList.find(
+        (c) => c instanceof ClientCollectionSearchCriteria && c.collectionId === col.id,
+      );
+      if (crit) {
+        uiStore.removeSearchCriteria(crit);
+      }
+    },
+    [uiStore],
+  );
+
+  const handleCloseSearch = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key.toLowerCase() === uiStore.hotkeyMap.closeSearch) {
+        e.preventDefault();
+        // Prevent react update on unmounted component while searchbar is closing
+        uiStore.closeQuickSearch();
+      }
+    },
+    [uiStore],
+  );
+
+  const selectorRef = useRef<MultiSelect<ClientTag | ClientTagCollection> | null>(null);
+  const setSelectorRef = useCallback((ref: MultiSelect<ClientTag | ClientTagCollection> | null) => {
+    selectorRef.current = ref;
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    console.log({ isPopoverOpen: selectorRef.current?.state.isOpen });
+    if (!selectorRef.current?.state.isOpen) {
       uiStore.closeQuickSearch();
     }
-  };
+    setTimeout(() => {
+      if (!selectorRef.current?.state.isOpen) {
+        uiStore.closeQuickSearch();
+      }
+    }, 100);
+  }, [uiStore]);
+
+  const handleClear = useCallback(() => {
+    uiStore.clearSearchCriteriaList();
+    uiStore.closeQuickSearch();
+  }, [uiStore]);
 
   return (
-    <MultiTagSelector
-      selectedItems={selectedItems}
-      onTagSelect={handleSelectTag}
-      onTagDeselect={handleDeselectTag}
-      onClearSelection={uiStore.clearSearchCriteriaList}
-      autoFocus={!uiStore.isAdvancedSearchOpen} // don't auto focus with advanced search open; focus is needed there instead
-      tagIntent="primary"
-      onKeyDown={handleCloseSearch}
-      showClearButton={false}
-      includeCollections
-      onTagColDeselect={handleDeselectCol}
-      onTagColSelect={handleSelectCol}
-    />
+    <>
+      <MultiTagSelector
+        selectorRef={setSelectorRef}
+        selectedItems={selectedItems}
+        onTagSelect={handleSelectTag}
+        onTagDeselect={handleDeselectTag}
+        onClearSelection={handleClear}
+        // autoFocus={!uiStore.isAdvancedSearchOpen} // don't auto focus with advanced search open; focus is needed there instead
+        tagIntent="primary"
+        onKeyDown={handleCloseSearch}
+        showClearButton={selectedItems.length > 0}
+        includeCollections
+        onTagColDeselect={handleDeselectCol}
+        onTagColSelect={handleSelectCol}
+        onFocus={uiStore.openQuickSearch}
+        onBlur={handleBlur}
+        fill
+      />
+      {uiStore.isQuickSearchOpen && (
+        <>
+          <Switch
+            // inline
+            // label="Match"
+            innerLabel="All"
+            innerLabelChecked="Any"
+            alignIndicator="right"
+            checked={uiStore.searchMatchAny}
+            onChange={uiStore.toggleSearchMatchAny}
+          />
+          <Button
+            minimal
+            icon={IconSet.SEARCH_EXTENDED}
+            onClick={uiStore.toggleAdvancedSearch}
+            title="Advanced search"
+          />
+        </>
+      )}
+    </>
   );
-};
+});
 
 interface ICriteriaList {
   criterias: React.ReactNode[];
@@ -168,7 +230,7 @@ export const Searchbar = observer(() => {
           title="Advanced search"
         />
         {isQuickSearch ? (
-          <QuickSearchList rootStore={rootStore} />
+          <QuickSearchList />
         ) : (
           <CriteriaList
             criterias={criterias}
@@ -179,6 +241,72 @@ export const Searchbar = observer(() => {
         <Button minimal icon={IconSet.CLOSE} onClick={closeQuickSearch} title="Close (Escape)" />
       </div>
     </CSSTransition>
+  );
+});
+
+export const ExpandingSearchInput = observer(() => {
+  const rootStore = useContext(StoreContext);
+  const {
+    uiStore: {
+      isQuickSearchOpen,
+      searchCriteriaList,
+      openQuickSearch,
+      closeQuickSearch,
+      toggleAdvancedSearch,
+      removeSearchCriteriaByIndex,
+    },
+    tagStore,
+  } = rootStore;
+
+  const criterias = searchCriteriaList.map((c) => {
+    const label = c.toString();
+    if (c instanceof ClientIDSearchCriteria && c.value.length === 1) {
+      const tag = tagStore.get(c.value[0]);
+      if (tag) {
+        return label.concat(tag.name);
+      }
+    }
+    return label;
+  });
+
+  // Open advanced search when clicking one of the criteria (but not their delete buttons)
+  const handleTagClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).tagName === 'SPAN') {
+      openQuickSearch();
+    }
+  };
+
+  const preventTyping = (e: React.KeyboardEvent<HTMLElement>, i?: number) => {
+    // If it's not an event on an existing Tag element, ignore it
+    if (i === undefined && !e.ctrlKey) {
+      e.preventDefault();
+    }
+  };
+
+  console.log({ isQuickSearchOpen });
+
+  return (
+    // <div id="expanding-search-list criteria-list">
+    <TagInput
+      // leftIcon={IconSet.SEARCH} // <-- alignment issue
+      leftIcon="search"
+      placeholder="Search"
+      values={criterias}
+      // onRemove={(_, i) => removeCriteriaByIndex(i)}
+      inputProps={{
+        onFocus: openQuickSearch,
+        onBlur: closeQuickSearch,
+      }}
+      onKeyDown={preventTyping}
+      tagProps={{
+        minimal: true,
+        intent: 'primary',
+        onClick: handleTagClick,
+        interactive: true,
+      }}
+      fill
+    />
+    // </div>
   );
 });
 

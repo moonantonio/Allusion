@@ -1,3 +1,23 @@
+.search-collapse-exit,
+.search-collapse-enter-active,
+.search-collapse-enter-done {
+  transition: ease max-width 0.2s, ease opacity 0.2s;
+  max-width: 100%;
+  opacity: 100%;
+  overflow: hidden;
+}
+.search-collapse-enter,
+.search-collapse-exit-active,
+.search-collapse-exit-done {
+  transition: ease max-width 0.2s, ease opacity 0.2s;
+  max-width: 0%;
+  opacity: 0%;
+  overflow: hidden;
+}
+.search-collapse-exit-done {
+  display: none;
+}
+
 ///////////////////////////////// Content area /////////////////////////////////
 .quick-search {
   background-color: var(--background-color);

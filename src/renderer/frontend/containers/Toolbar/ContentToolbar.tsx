@@ -16,6 +16,8 @@ import { FileOrder } from '../../../backend/DBRepository';
 import { useMemo, useContext } from 'react';
 import StoreContext from '../../contexts/StoreContext';
 import { FileRemoval } from '../Outliner/MessageBox';
+import { ExpandingSearchInput, QuickSearchList } from '../ContentView/Searchbar';
+import { CSSTransition } from 'react-transition-group';
 
 interface IFileSelection {
   allFilesSelected: boolean;
@@ -193,54 +195,68 @@ const ContentToolbar = observer(() => {
   );
 
   if (uiStore.isSlideMode) {
-    return <SlideModeToolbar />;
+    return (
+      <ToolbarGroup id="main-toolbar">
+        <SlideModeToolbar />
+      </ToolbarGroup>
+    );
   } else {
     return (
       <ToolbarGroup id="main-toolbar">
-        <ToolbarGroup>
-          <ToolbarToggleButton
+        {/* <ToolbarGroup> */}
+        {/* <ToolbarToggleButton
             icon={IconSet.SEARCH}
             onClick={uiStore.toggleQuickSearch}
             pressed={uiStore.isQuickSearchOpen}
             label="Search"
             tooltip={ToolbarTooltips.Search}
-          />
-        </ToolbarGroup>
+          /> */}
+        {/* </ToolbarGroup> */}
+        {/* <ExpandingSearchInput /> */}
+        <QuickSearchList />
 
-        <ToolbarGroup>
-          <FileSelection
-            allFilesSelected={
-              fileSelection.size > 0 && fileSelection.size === fileStore.fileList.length
-            }
-            toggleSelection={handleToggleSelect}
-            selectionCount={fileSelection.size}
-          />
+        <CSSTransition
+          in={!uiStore.isQuickSearchOpen}
+          timeout={200}
+          classNames="search-collapse"
+          // unmountOnExit
+        >
+          <>
+            <ToolbarGroup>
+              <FileSelection
+                allFilesSelected={
+                  fileSelection.size > 0 && fileSelection.size === fileStore.fileList.length
+                }
+                toggleSelection={handleToggleSelect}
+                selectionCount={fileSelection.size}
+              />
 
-          {/* Only show when not viewing missing files (so it is replaced by the Delete button) */}
-          <TagFilesPopover
-            files={uiStore.isToolbarTagSelectorOpen ? uiStore.clientFileSelection : []}
-            disabled={fileSelection.size === 0 || fileStore.fileList.length === 0}
-            isOpen={uiStore.isToolbarTagSelectorOpen}
-            close={uiStore.closeToolbarTagSelector}
-            toggle={uiStore.toggleToolbarTagSelector}
-            hidden={fileStore.content === 'missing'}
-          />
+              {/* Only show when not viewing missing files (so it is replaced by the Delete button) */}
+              <TagFilesPopover
+                files={uiStore.isToolbarTagSelectorOpen ? uiStore.clientFileSelection : []}
+                disabled={fileSelection.size === 0 || fileStore.fileList.length === 0}
+                isOpen={uiStore.isToolbarTagSelectorOpen}
+                close={uiStore.closeToolbarTagSelector}
+                toggle={uiStore.toggleToolbarTagSelector}
+                hidden={fileStore.content === 'missing'}
+              />
 
-          {/* Only show option to remove selected files in toolbar when viewing missing files */}
-          <RemoveFilesPopover
-            hidden={fileStore.content !== 'missing'}
-            disabled={uiStore.fileSelection.size === 0}
-          />
+              {/* Only show option to remove selected files in toolbar when viewing missing files */}
+              <RemoveFilesPopover
+                hidden={fileStore.content !== 'missing'}
+                disabled={uiStore.fileSelection.size === 0}
+              />
 
-          <FileFilter
-            fileOrder={fileStore.fileOrder}
-            orderBy={fileStore.orderBy}
-            orderFilesBy={fileStore.orderFilesBy}
-            switchFileOrder={fileStore.switchFileOrder}
-          />
-        </ToolbarGroup>
-
-        <LayoutOptions />
+              <FileFilter
+                fileOrder={fileStore.fileOrder}
+                orderBy={fileStore.orderBy}
+                orderFilesBy={fileStore.orderFilesBy}
+                switchFileOrder={fileStore.switchFileOrder}
+              />
+              <LayoutOptions />
+            </ToolbarGroup>
+          </>
+        </CSSTransition>
       </ToolbarGroup>
     );
   }
