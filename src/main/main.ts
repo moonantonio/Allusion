@@ -1,12 +1,12 @@
-import { app, BrowserWindow, Menu, Tray, screen } from 'electron';
-
-import AppIcon from '../renderer/resources/logo/favicon_512x512.png';
-import TrayIcon from '../renderer/resources/logo/logomark_256.png';
-import TrayIconMac from '../renderer/resources/logo/logomark_light@2x.png';
+import { app, BrowserWindow, Menu, nativeImage, nativeTheme, screen, Tray } from 'electron';
+import { autoUpdater } from 'electron-updater';
+import AppIcon from '../../resources/logo/allusion-logomark-fc-512x512.png';
+import TrayIcon from '../../resources/logo/allusion-logomark-fc-256x256.png';
+import TrayIconMac from '../../resources/logo/allusion-logomark-white@2x.png';
 import { isDev } from '../config';
-import ClipServer, { IImportItem } from './clipServer';
-import { ITag } from '../renderer/entities/Tag';
 import { MainMessenger } from '../Messaging';
+import { ITag } from '../renderer/entities/Tag';
+import ClipServer, { IImportItem } from './clipServer';
 
 let mainWindow: BrowserWindow | null;
 let previewWindow: BrowserWindow | null;
@@ -71,27 +71,59 @@ function createWindow() {
     // Todo: This setting looks nice on osx, but overlaps with native toolbar buttons
     // Fixed it by adding a margin-top to the body and giving html background color so it blends in
     // But new issue arissed in fullscreen than
-    // titleBarStyle: 'hiddenInset',
+    titleBarStyle: 'hiddenInset',
+    frame: !isMac,
     webPreferences: {
       nodeIntegration: true,
       nodeIntegrationInWorker: true,
+      // window.open should open a normal window like in a browser, not an electron BrowserWindowProxy
+      nativeWindowOpen: true,
+      nodeIntegrationInSubFrames: true,
     },
     width,
     height,
     icon: `${__dirname}/${AppIcon}`,
     // Should be same as body background: Only for split second before css is loaded
     backgroundColor: '#14181a',
-    title: 'Allusion - Your Visual Library',
+    title: 'Allusion',
+    show: false,
   });
+  mainWindow.on('ready-to-show', () => mainWindow?.show());
 
-  // Create our menu entries so that we can use MAC shortcuts
-  const menuBar: Electron.MenuItemConstructorOptions[] = [];
+  // Customize new window opening
+  // https://www.electronjs.org/docs/api/window-open
+  mainWindow.webContents.on(
+    'new-window',
+    (event, url, frameName, disposition, options, additionalFeatures) => {
+      if (frameName === 'settings') {
+        event.preventDefault();
+        // https://www.electronjs.org/docs/api/browser-window#class-browserwindow
+        const additionalOptions: Electron.BrowserWindowConstructorOptions = {
+          modal: true,
+          parent: mainWindow!,
+          width: 600,
+          height: 570,
+          title: 'Settings • Allusion',
+          resizable: false,
+        };
+        Object.assign(options, additionalOptions);
+        const settingsWindow = new BrowserWindow(options);
+        settingsWindow.center(); // the "center" option doesn't work :/
+        settingsWindow.setMenu(null); // no toolbar needed
+        (event as any).newGuest = settingsWindow;
+      }
+    },
+  );
+
+  let menu = null;
 
   // Mac App menu - used for styling so shortcuts work
   // https://livebook.manning.com/book/cross-platform-desktop-applications/chapter-9/78
-  if (process.platform === 'darwin') {
+  if (isMac || isDev()) {
+    // Create our menu entries so that we can use MAC shortcuts
+    const menuBar: Electron.MenuItemConstructorOptions[] = [];
+
     menuBar.push({
-      // label: app.getName(),
       label: 'Allusion',
       submenu: [
         { role: 'about' },
@@ -109,65 +141,66 @@ function createWindow() {
         },
       ],
     });
+
+    menuBar.push({
+      label: 'Edit',
+      submenu: [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }],
+    });
+
+    menuBar.push({
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        {
+          label: 'Actual Size',
+          accelerator: 'CommandOrControl+0',
+          click: (_, browserWindow) => {
+            browserWindow!.webContents.zoomFactor = 1;
+          },
+        },
+        {
+          label: 'Zoom In',
+          // TODO: Fix by using custom solution...
+          accelerator: 'CommandOrControl+=',
+          click: (_, browserWindow) => {
+            browserWindow!.webContents.zoomFactor += 0.1;
+          },
+        },
+        {
+          label: 'Zoom Out',
+          accelerator: 'CommandOrControl+-',
+          click: (_, browserWindow) => {
+            browserWindow!.webContents.zoomFactor -= 0.1;
+          },
+        },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    });
+
+    menuBar.push({
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Show Keyboard Shortcuts',
+          accelerator: 'CommandOrControl+K',
+          click: (_, browserWindow) => {
+            browserWindow!.webContents.sendInputEvent({
+              type: 'keyDown',
+              isTrusted: true,
+              keyCode: '?',
+            } as any);
+          },
+        },
+      ],
+    });
+
+    menu = Menu.buildFromTemplate(menuBar);
   }
-
-  menuBar.push({
-    label: 'Edit',
-    submenu: [{ role: 'cut' }, { role: 'copy' }, { role: 'paste' }],
-  });
-
-  menuBar.push({
-    label: 'View',
-    submenu: [
-      { role: 'reload' },
-      { role: 'forceReload' },
-      { role: 'toggleDevTools' },
-      { type: 'separator' },
-      {
-        label: 'Actual Size',
-        accelerator: 'CommandOrControl+0',
-        click: (_, browserWindow) => {
-          browserWindow.webContents.setZoomFactor(1);
-        },
-      },
-      {
-        label: 'Zoom In',
-        // TODO: Fix by using custom solution...
-        accelerator: 'CommandOrControl+=',
-        click: (_, browserWindow) => {
-          browserWindow.webContents.setZoomFactor(browserWindow.webContents.getZoomFactor() + 0.1);
-        },
-      },
-      {
-        label: 'Zoom Out',
-        accelerator: 'CommandOrControl+-',
-        click: (_, browserWindow) => {
-          browserWindow.webContents.setZoomFactor(browserWindow.webContents.getZoomFactor() - 0.1);
-        },
-      },
-      { type: 'separator' },
-      { role: 'togglefullscreen' },
-    ],
-  });
-
-  menuBar.push({
-    label: 'Help',
-    submenu: [
-      {
-        label: 'Show Keyboard Shortcuts',
-        accelerator: 'CommandOrControl+K',
-        click: (_, browserWindow) => {
-          browserWindow.webContents.sendInputEvent({
-            type: 'keyDown',
-            isTrusted: true,
-            keyCode: '?',
-          } as any);
-        },
-      },
-    ],
-  });
-
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menuBar));
+  Menu.setApplicationMenu(menu);
 
   // and load the index.html of the app.
   mainWindow.loadURL(`file://${__dirname}/index.html`);
@@ -252,6 +285,8 @@ function createPreviewWindow() {
 initialize = () => {
   createWindow();
   createPreviewWindow();
+
+  autoUpdater.checkForUpdatesAndNotify();
 };
 
 // This method will be called when Electron has finished
@@ -278,8 +313,8 @@ app.on('activate', () => {
   }
 });
 
-// Messaging ///////////////////////////////
-////////////////////////////////////////////
+// Messaging: Sending and receiving messages between the main and renderer process //
+/////////////////////////////////////////////////////////////////////////////////////
 MainMessenger.onSetDownloadPath(({ dir }) => clipServer!.setDownloadPath(dir));
 MainMessenger.onIsClipServerRunning(() => clipServer!.isEnabled());
 MainMessenger.onIsRunningInBackground(() => clipServer!.isRunInBackgroundEnabled());
@@ -305,7 +340,12 @@ MainMessenger.onStoreFile(({ filenameWithExt, imgBase64 }) =>
 // Forward files from the main window to the preview window
 MainMessenger.onSendPreviewFiles((msg) => {
   // Create preview window if needed, and send the files selected in the primary window
-  if (!previewWindow) {
+  if (!previewWindow || previewWindow.isDestroyed()) {
+    // The Window object might've been destroyed if it was hidden for too long -> Recreate it
+    if (previewWindow?.isDestroyed()) {
+      console.warn('Preview window was destroyed! Attemping to recreate...');
+    }
+
     previewWindow = createPreviewWindow();
     MainMessenger.onceInitialized().then(() => {
       if (previewWindow) {
@@ -314,11 +354,26 @@ MainMessenger.onSendPreviewFiles((msg) => {
     });
   } else {
     MainMessenger.sendPreviewFiles(previewWindow.webContents, msg);
-
     if (!previewWindow.isVisible()) {
       previewWindow.show();
     }
     previewWindow.focus();
+  }
+});
+
+// TODO: Should set this on startup: E.g. Choosing light theme, but having a dark system theme, will be incorrect after restart
+MainMessenger.onSetTheme((msg) => (nativeTheme.themeSource = msg.theme));
+
+MainMessenger.onDragExport(({ absolutePaths }) => {
+  if (!mainWindow) return;
+  if (absolutePaths.length > 0) {
+    mainWindow.webContents.startDrag({
+      files: absolutePaths,
+      // Just show the first image as a thumbnail for now
+      // TODO: Show some indication that multiple images are dragged, would be cool to show a stack of the first few of them
+      // also, this will show really big icons for narrow images, should take into account their aspect ratio
+      icon: nativeImage.createFromPath(absolutePaths[0]).resize({ width: 200 }) || AppIcon,
+    } as any); // need to "any" this since the types are not correct: the files field is allowed but not according to TypeScript
   }
 });
 

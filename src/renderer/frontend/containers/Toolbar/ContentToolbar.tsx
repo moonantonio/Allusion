@@ -1,22 +1,21 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button, Popover, Icon, ButtonGroup, Menu, MenuItem } from '@blueprintjs/core';
-import IconSet from '../../components/Icons';
+import { Popover, Icon, Menu, MenuItem } from '@blueprintjs/core';
+import IconSet from 'components/Icons';
 import { ToolbarTooltips } from '.';
+import {
+  ToolbarButton,
+  ToolbarGroup,
+  ToolbarSegment,
+  ToolbarSegmentButton,
+  ToolbarToggleButton,
+} from 'components';
 import { ClientFile, IFile } from '../../../entities/File';
 import FileTags from '../../components/FileTag';
 import { FileOrder } from '../../../backend/DBRepository';
 import { useMemo, useContext } from 'react';
-import { ViewMethod } from '../../UiStore';
 import StoreContext from '../../contexts/StoreContext';
-
-
-/* Library info. Todo: Show entire library count instead of current fileList */
-const LibraryInfo = observer(({ fileCount }: { fileCount: number }) => (
-  <Button id="media" icon={IconSet.MEDIA} className="tooltip" data-right={ToolbarTooltips.Media}>
-    {` ${fileCount} item${fileCount === 1 ? '' : 's'}`}
-  </Button>
-));
+import { FileRemoval } from '../Outliner/MessageBox';
 
 interface IFileSelection {
   allFilesSelected: boolean;
@@ -26,15 +25,14 @@ interface IFileSelection {
 
 const FileSelection = observer(
   ({ allFilesSelected, toggleSelection: toggle, selectionCount }: IFileSelection) => (
-    <Button
-      rightIcon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
+    <ToolbarToggleButton
+      showLabel="always"
+      icon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
       onClick={toggle}
-      intent={allFilesSelected ? 'primary' : 'none'}
-      className="tooltip"
-      data-right={ToolbarTooltips.Select}
-    >
-      {selectionCount} selected
-    </Button>
+      pressed={allFilesSelected}
+      label={`${selectionCount}`}
+      tooltip={ToolbarTooltips.Select}
+    />
   ),
 );
 
@@ -44,24 +42,58 @@ interface ITagFilesPopoverProps {
   isOpen: boolean;
   close: () => void;
   toggle: () => void;
+  hidden?: boolean;
 }
 
 const TagFilesPopover = observer(
-  ({ disabled, files, isOpen, close, toggle }: ITagFilesPopoverProps) => (
-    <Popover minimal isOpen={isOpen} onClose={close}>
-      <Button
-        icon={IconSet.TAG}
-        disabled={disabled}
-        onClick={toggle}
-        className="tooltip"
-        data-right={ToolbarTooltips.TagFiles}
-      />
-      <div className="popoverContent">
-        <FileTags files={files} autoFocus />
-      </div>
+  ({ disabled, files, isOpen, close, toggle, hidden }: ITagFilesPopoverProps) => (
+    <Popover minimal openOnTargetFocus={false} usePortal={false} isOpen={isOpen} onClose={close}>
+      {hidden ? (
+        <></>
+      ) : (
+        <ToolbarButton
+          icon={IconSet.TAG}
+          disabled={disabled}
+          onClick={toggle}
+          label="Tag"
+          tooltip={ToolbarTooltips.TagFiles}
+        />
+      )}
+      <FileTags files={files} autoFocus />
     </Popover>
   ),
 );
+
+interface IRemoveFilesPopoverProps {
+  hidden?: boolean;
+  disabled?: boolean;
+}
+
+const RemoveFilesPopover = observer(({ hidden, disabled }: IRemoveFilesPopoverProps) => {
+  const { uiStore } = useContext(StoreContext);
+  const theme = uiStore.theme === 'DARK' ? 'bp3-dark' : 'bp3-light';
+  return (
+    <>
+      {hidden ? null : (
+        <ToolbarButton
+          icon={IconSet.DELETE}
+          disabled={disabled}
+          onClick={uiStore.toggleToolbarFileRemover}
+          label="Delete"
+          tooltip={ToolbarTooltips.Delete}
+          // Giving it a warning intent will make it stand out more - it is usually hidden so it might not be obviously discovered
+          // intent="warning"
+        />
+      )}
+      <FileRemoval
+        isOpen={uiStore.isToolbarFileRemoverOpen}
+        onClose={uiStore.toggleToolbarFileRemover}
+        theme={theme}
+        object={uiStore.isToolbarFileRemoverOpen ? uiStore.clientFileSelection : []}
+      />
+    </>
+  );
+});
 
 interface IFileFilter {
   fileOrder: FileOrder;
@@ -79,137 +111,152 @@ const sortMenuData: Array<{ prop: keyof IFile; icon: JSX.Element; text: string }
   { prop: 'dateModified', icon: IconSet.FILTER_DATE, text: 'Date modified' },
 ];
 
-const FileFilter = observer(
-  ({ fileOrder, orderBy, orderFilesBy, switchFileOrder }: IFileFilter) => {
-    // Render variables
-    const sortMenu = useMemo(() => {
-      const orderIcon = (
-        <Icon icon={fileOrder === 'DESC' ? IconSet.ARROW_DOWN : IconSet.ARROW_UP} />
-      );
-      return (
+export const SortMenuItems = ({
+  fileOrder,
+  orderBy,
+  orderFilesBy,
+  switchFileOrder,
+}: IFileFilter) => {
+  const orderIcon = <Icon icon={fileOrder === 'DESC' ? IconSet.ARROW_DOWN : IconSet.ARROW_UP} />;
+  return (
+    <>
+      {sortMenuData.map(({ prop, icon, text }) => (
+        <MenuItem
+          key={prop}
+          icon={icon}
+          text={text}
+          active={orderBy === prop}
+          labelElement={orderBy === prop && orderIcon}
+          onClick={() => (orderBy === prop ? switchFileOrder() : orderFilesBy(prop))}
+        />
+      ))}
+    </>
+  );
+};
+
+const FileFilter = observer((props: IFileFilter) => {
+  return (
+    <Popover
+      minimal
+      openOnTargetFocus={false}
+      usePortal={false}
+      content={
         <Menu>
-          {sortMenuData.map(({ prop, icon, text }) => (
-            <MenuItem
-              key={prop}
-              icon={icon}
-              text={text}
-              active={orderBy === prop}
-              labelElement={orderBy === prop && orderIcon}
-              onClick={() => (orderBy === prop ? switchFileOrder() : orderFilesBy(prop))}
-            />
-          ))}
+          <SortMenuItems {...props} />
         </Menu>
-      );
-    }, [fileOrder, orderBy, switchFileOrder, orderFilesBy]);
-
-    return (
-      <Popover
-        minimal
-        target={<Button icon={IconSet.FILTER} className="tooltip" data-right={ToolbarTooltips.Filter} />}
-        content={sortMenu}
+      }
+    >
+      <ToolbarButton
+        icon={IconSet.FILTER_NAME_DOWN}
+        label="Sort"
+        tooltip={ToolbarTooltips.Filter}
       />
-    );
-  },
-);
+    </Popover>
+  );
+});
 
-interface ILayoutOptions {
-  method: ViewMethod;
-  viewGrid: () => void;
-  viewList: () => void;
-}
+const LayoutOptions = observer(() => {
+  const { uiStore } = useContext(StoreContext);
+  return (
+    <ToolbarSegment label="View">
+      <ToolbarSegmentButton
+        onClick={uiStore.setMethodList}
+        icon={IconSet.VIEW_LIST}
+        checked={uiStore.isList}
+        label="List"
+        tooltip={ToolbarTooltips.ViewList}
+      />
+      <ToolbarSegmentButton
+        onClick={uiStore.setMethodGrid}
+        icon={IconSet.VIEW_GRID}
+        checked={uiStore.isGrid}
+        label="Grid"
+        tooltip={ToolbarTooltips.ViewGrid}
+      />
+    </ToolbarSegment>
+  );
+});
 
-const LayoutOptions = observer(({ method, viewGrid, viewList }: ILayoutOptions) => (
-  <ButtonGroup minimal>
-    <Button
-      onClick={viewList}
-      icon={IconSet.VIEW_LIST}
-      active={method === 'list'}
-      className="tooltip"
-      data-right={ToolbarTooltips.ViewList}
-    />
-    <Button
-      onClick={viewGrid}
-      icon={IconSet.VIEW_GRID}
-      active={method === 'grid'}
-      className="tooltip"
-      data-right={ToolbarTooltips.ViewGrid}
-    />
-    <div id="spacer" style={{ width: '1rem' }} />
-  </ButtonGroup>
-));
+const SlideModeToolbar = observer(() => {
+  const { uiStore } = useContext(StoreContext);
+  return (
+    <ToolbarGroup id="main-toolbar">
+      <ToolbarButton
+        showLabel="always"
+        icon={IconSet.ARROW_LEFT}
+        onClick={uiStore.disableSlideMode}
+        label="Return"
+        tooltip={ToolbarTooltips.Back}
+      />
+    </ToolbarGroup>
+  );
+});
 
-const ContentToolbar = observer(({ className }: { className?: string }) => {
+const ContentToolbar = observer(() => {
   const { uiStore, fileStore } = useContext(StoreContext);
   const { fileSelection } = uiStore;
+
   // If everything is selected, deselect all. Else, select all
-  const handleToggleSelect = () =>
-    fileSelection.length > 0 && fileSelection.length === fileStore.fileList.length
-      ? uiStore.clearFileSelection()
-      : uiStore.selectFiles(
-          fileStore.fileList.map((f) => f.id).filter((f) => !fileSelection.includes(f)),
-        );
-
-  return (
-    <section id="main-toolbar" className={className}>
-      {uiStore.view.isSlideMode ? (
-        <ButtonGroup minimal>
-          {/* Slide mode */}
-          <Button
-            icon={IconSet.ARROW_LEFT}
-            onClick={uiStore.view.disableSlideMode}
-            intent="primary"
-            className="tooltip"
-            data-right={ToolbarTooltips.Back}
-          >
-            Return
-          </Button>
-        </ButtonGroup>
-      ) : (
-        <>
-          <ButtonGroup minimal>
-            <Button
-              icon={IconSet.SEARCH}
-              onClick={uiStore.toggleQuickSearch}
-              intent={uiStore.isQuickSearchOpen ? 'primary' : 'none'}
-              className="tooltip"
-              data-right={ToolbarTooltips.Search}
-            />
-
-            <LibraryInfo fileCount={fileStore.fileList.length} />
-          </ButtonGroup>
-
-          <ButtonGroup minimal>
-            <FileSelection
-              allFilesSelected={
-                fileSelection.length > 0 && fileSelection.length === fileStore.fileList.length
-              }
-              toggleSelection={handleToggleSelect}
-              selectionCount={fileSelection.length}
-            />
-            <TagFilesPopover
-              files={uiStore.clientFileSelection}
-              disabled={fileSelection.length <= 0 || fileStore.fileList.length <= 0}
-              isOpen={uiStore.isToolbarTagSelectorOpen}
-              close={uiStore.closeToolbarTagSelector}
-              toggle={uiStore.toggleToolbarTagSelector}
-            />
-            <FileFilter
-              fileOrder={fileStore.fileOrder}
-              orderBy={fileStore.orderBy}
-              orderFilesBy={fileStore.orderFilesBy}
-              switchFileOrder={fileStore.switchFileOrder}
-            />
-          </ButtonGroup>
-
-          <LayoutOptions
-            method={uiStore.view.method}
-            viewGrid={uiStore.view.setMethodGrid}
-            viewList={uiStore.view.setMethodList}
-          />
-        </>
-      )}
-    </section>
+  const handleToggleSelect = useCallback(
+    () =>
+      fileSelection.size > 0 && fileSelection.size === fileStore.fileList.length
+        ? uiStore.clearFileSelection()
+        : uiStore.selectAllFiles(),
+    [fileSelection, fileStore.fileList, uiStore],
   );
+
+  if (uiStore.isSlideMode) {
+    return <SlideModeToolbar />;
+  } else {
+    return (
+      <ToolbarGroup id="main-toolbar">
+        <ToolbarGroup>
+          <ToolbarToggleButton
+            icon={IconSet.SEARCH}
+            onClick={uiStore.toggleQuickSearch}
+            pressed={uiStore.isQuickSearchOpen}
+            label="Search"
+            tooltip={ToolbarTooltips.Search}
+          />
+        </ToolbarGroup>
+
+        <ToolbarGroup>
+          <FileSelection
+            allFilesSelected={
+              fileSelection.size > 0 && fileSelection.size === fileStore.fileList.length
+            }
+            toggleSelection={handleToggleSelect}
+            selectionCount={fileSelection.size}
+          />
+
+          {/* Only show when not viewing missing files (so it is replaced by the Delete button) */}
+          <TagFilesPopover
+            files={uiStore.isToolbarTagSelectorOpen ? uiStore.clientFileSelection : []}
+            disabled={fileSelection.size === 0 || fileStore.fileList.length === 0}
+            isOpen={uiStore.isToolbarTagSelectorOpen}
+            close={uiStore.closeToolbarTagSelector}
+            toggle={uiStore.toggleToolbarTagSelector}
+            hidden={fileStore.content === 'missing'}
+          />
+
+          {/* Only show option to remove selected files in toolbar when viewing missing files */}
+          <RemoveFilesPopover
+            hidden={fileStore.content !== 'missing'}
+            disabled={uiStore.fileSelection.size === 0}
+          />
+
+          <FileFilter
+            fileOrder={fileStore.fileOrder}
+            orderBy={fileStore.orderBy}
+            orderFilesBy={fileStore.orderFilesBy}
+            switchFileOrder={fileStore.switchFileOrder}
+          />
+        </ToolbarGroup>
+
+        <LayoutOptions />
+      </ToolbarGroup>
+    );
+  }
 });
 
 export default ContentToolbar;

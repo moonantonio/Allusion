@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useCallback } from 'react';
-import { Button, Switch } from '@blueprintjs/core';
+import { Switch } from '@blueprintjs/core';
 import { observer } from 'mobx-react-lite';
 
 import StoreContext from './contexts/StoreContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import ContentView from './containers/ContentView';
-import IconSet from './components/Icons';
+import IconSet from 'components/Icons';
 import { useWorkerListener } from './ThumbnailGeneration';
+import { Toolbar, ToolbarGroup, ToolbarButton } from 'components';
 
 const PreviewApp = observer(() => {
   const { uiStore, fileStore } = useContext(StoreContext);
@@ -15,46 +16,44 @@ const PreviewApp = observer(() => {
   // Listen to responses of Web Workers
   useWorkerListener();
 
-  useEffect(uiStore.view.enableSlideMode, []);
+  useEffect(() => uiStore.enableSlideMode(), [uiStore]);
 
   const handleLeftButton = useCallback(
-    () => uiStore.view.setFirstItem(Math.max(0, uiStore.view.firstItem - 1)),
-    [uiStore.view],
+    () => uiStore.setFirstItem(Math.max(0, uiStore.firstItem - 1)),
+    [uiStore],
   );
 
   const handleRightButton = useCallback(
-    () =>
-      uiStore.view.setFirstItem(
-        Math.min(uiStore.view.firstItem + 1, fileStore.fileList.length - 1),
-      ),
-    [fileStore.fileList.length, uiStore.view],
+    () => uiStore.setFirstItem(Math.min(uiStore.firstItem + 1, fileStore.fileList.length - 1)),
+    [fileStore.fileList.length, uiStore],
   );
 
   return (
-    <div id="layoutContainer" className={`${themeClass}`} style={{ height: '100%' }}>
+    <div id="preview" className={themeClass}>
       <ErrorBoundary>
-        <div id="toolbar" style={{ height: '2.4rem' }}>
-          <section id="preview-toolbar">
-            <Button
+        <Toolbar id="toolbar" label="Preview Command Bar" controls="gallery">
+          <ToolbarGroup>
+            <ToolbarButton
+              showLabel="never"
               icon={IconSet.ARROW_LEFT}
+              label="Previous Image"
               onClick={handleLeftButton}
-              minimal
-              disabled={uiStore.view.firstItem === 0}
+              disabled={uiStore.firstItem === 0}
             />
-            <Button
+            <ToolbarButton
+              showLabel="never"
               icon={IconSet.ARROW_RIGHT}
+              label="Next Image"
               onClick={handleRightButton}
-              minimal
-              disabled={uiStore.view.firstItem === fileStore.fileList.length - 1}
+              disabled={uiStore.firstItem === fileStore.fileList.length - 1}
             />
             <Switch
               label="Overview"
-              onChange={uiStore.view.toggleSlideMode}
-              checked={!uiStore.view.isSlideMode}
-              style={{ margin: 'auto', marginLeft: '1em', display: 'inline' }}
+              onChange={uiStore.toggleSlideMode}
+              checked={!uiStore.isSlideMode}
             />
-          </section>
-        </div>
+          </ToolbarGroup>
+        </Toolbar>
 
         <ContentView />
       </ErrorBoundary>

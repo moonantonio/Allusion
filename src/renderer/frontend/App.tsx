@@ -6,18 +6,19 @@ import Outliner from './containers/Outliner';
 import StoreContext from './contexts/StoreContext';
 import Inspector from './containers/Inspector';
 import Toolbar from './containers/Toolbar';
+import ContentToolbar from './containers/Toolbar/ContentToolbar';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
 import GlobalHotkeys from './components/Hotkeys';
-import Settings from './components/Settings';
+import SettingsWindow from './components/Settings';
+import HelpCenter from './components/HelpCenter';
 import DropOverlay from './components/DropOverlay';
-import { AdvancedSearchDialog } from './containers/Outliner/SearchForm';
+import { AdvancedSearchDialog } from './containers/Outliner/SearchPanel';
 import { useWorkerListener } from './ThumbnailGeneration';
-import { DragLayer } from './containers/Outliner/TagPanel';
 import { Toaster, Position } from '@blueprintjs/core';
 import WelcomeDialog from './components/WelcomeDialog';
 
-const SPLASH_SCREEN_TIME = 700;
+const SPLASH_SCREEN_TIME = 1400;
 
 export const AppToaster = Toaster.create({
   position: Position.BOTTOM_RIGHT,
@@ -37,7 +38,7 @@ const App = observer(() => {
 
     // Prevent scrolling with Space, instead used to open preview window
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !(e.target instanceof HTMLInputElement)) {
+      if (e.key === ' ' && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
       }
     });
@@ -47,17 +48,17 @@ const App = observer(() => {
     return <SplashScreen />;
   }
 
-  const themeClass = uiStore.theme === 'DARK' ? 'bp3-dark' : 'bp3-light';
-
-  const sidebarClass = uiStore.isToolbarVertical ? 'vertical-toolbar' : '';
+  let themeClass = uiStore.theme === 'DARK' ? 'bp3-dark' : 'bp3-light';
+  themeClass = uiStore.isToolbarVertical ? `${themeClass} vertical-toolbar` : themeClass;
 
   return (
     // Overlay that shows up when dragging files/images over the application
     <DropOverlay>
-      <div className={sidebarClass}>
-      <div id="layoutContainer" className={`${themeClass}`}>
+      <div id="layout-container" className={themeClass}>
         <ErrorBoundary>
           <GlobalHotkeys>
+            {uiStore.isToolbarVertical ? <ContentToolbar /> : <></>}
+
             <Toolbar />
 
             <Outliner />
@@ -66,17 +67,15 @@ const App = observer(() => {
 
             <Inspector />
 
-            <Settings />
+            <SettingsWindow />
+
+            <HelpCenter />
 
             <AdvancedSearchDialog />
 
             <WelcomeDialog />
-
-            {/* Overlay for showing custom drag previews */}
-            <DragLayer />
           </GlobalHotkeys>
         </ErrorBoundary>
-      </div>
       </div>
     </DropOverlay>
   );

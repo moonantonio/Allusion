@@ -23,6 +23,7 @@ const Single = observer(({ file, autoFocus }: { file: ClientFile; autoFocus?: bo
 
   return (
     <MultiTagSelector
+      disabled={file.isBroken}
       selectedItems={file.clientTags}
       onClearSelection={file.removeAllTags}
       onTagDeselect={(tag) => file.removeTag(tag.id)}
@@ -73,7 +74,7 @@ const Multi = observer(({ files, autoFocus }: IFileTagProps) => {
 
 const FileTags = ({ files, autoFocus = false }: IFileTagProps) => {
   return (
-    <section id="fileTag">
+    <section className="file-tag">
       <h4 className="bp3-heading inpectorHeading">Tags</h4>
       {files.length === 1 ? (
         <Single file={files[0]} autoFocus={autoFocus} />

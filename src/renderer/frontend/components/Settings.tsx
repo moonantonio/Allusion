@@ -1,25 +1,29 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useContext, useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
   Drawer,
   Classes,
-  Switch,
   Button,
   Callout,
   H4,
-  RadioGroup,
-  Radio,
   FormGroup,
   KeyCombo,
+  Switch,
+  Radio,
+  RadioGroup,
+  Divider,
 } from '@blueprintjs/core';
 
 import StoreContext from '../contexts/StoreContext';
-import IconSet from './Icons';
+import IconSet from 'components/Icons';
 import { ClearDbButton } from './ErrorBoundary';
 import { remote } from 'electron';
 import { moveThumbnailDir } from '../ThumbnailGeneration';
 import { getThumbnailPath, isDirEmpty } from '../utils';
 import { RendererMessenger } from '../../../Messaging';
+import RootStore from '../stores/RootStore';
+import ReactDOM from 'react-dom';
+import PopupWindow from './PopupWindow';
 
 // Window state
 const WINDOW_STORAGE_KEY = 'Allusion_Window';
@@ -31,21 +35,14 @@ const toggleFullScreen = () => {
   setFullScreen(!isFullScreen());
 };
 
-const Settings = observer(() => {
+const toggleClipServer = (event: React.ChangeEvent<HTMLInputElement>) =>
+  RendererMessenger.setClipServerEnabled({ isClipServerRunning: event.target.checked });
+
+const toggleRunInBackground = (event: React.ChangeEvent<HTMLInputElement>) =>
+  RendererMessenger.setRunInBackground({ isRunInBackground: event.target.checked });
+
+const SettingsForm = observer(() => {
   const { uiStore, fileStore, locationStore } = useContext(StoreContext);
-
-  const [isClipServerRunning, setClipServerRunning] = useState(false);
-  const [isRunningInBackground, setRunningInBackground] = useState(false);
-
-  const toggleClipServer = useCallback(() => {
-    RendererMessenger.setClipServerEnabled({ isClipServerRunning: !isClipServerRunning });
-    setClipServerRunning(!isClipServerRunning);
-  }, [setClipServerRunning, isClipServerRunning]);
-
-  const toggleRunInBackground = useCallback(() => {
-    RendererMessenger.setRunInBackground({ isRunInBackground: !isRunningInBackground });
-    setRunningInBackground(!isRunningInBackground);
-  }, [setRunningInBackground, isRunningInBackground]);
 
   const browseImportDir = useCallback(() => {
     const dirs = remote.dialog.showOpenDialogSync({
@@ -77,11 +74,7 @@ const Settings = observer(() => {
         console.log('Cannot load persistent preferences', e);
       }
     }
-    setClipServerRunning(RendererMessenger.getIsClipServerEnabled());
-    setRunningInBackground(RendererMessenger.getIsRunningInBackground());
   }, []);
-
-  const themeClass = uiStore.theme === 'DARK' ? 'bp3-dark' : 'bp3-light';
 
   const browseThumbnailDirectory = useCallback(async () => {
     const dirs = remote.dialog.showOpenDialogSync({
@@ -108,41 +101,36 @@ const Settings = observer(() => {
     // Reset thumbnail paths for those that already have one
     fileStore.fileList.forEach((f) => {
       if (f.thumbnailPath) {
-        f.setThumbnailPath(getThumbnailPath(f.path, newDir));
+        f.setThumbnailPath(getThumbnailPath(f.absolutePath, newDir));
       }
     });
   }, [fileStore.fileList, uiStore]);
 
   return (
-    <Drawer
-      isOpen={uiStore.isSettingsOpen}
-      icon={IconSet.SETTINGS}
-      onClose={uiStore.toggleSettings}
-      title="Settings"
-      className={themeClass}
-    >
-      <div className={Classes.DRAWER_BODY}>
+    <div className="settings-form">
+      <div className="column">
         <RadioGroup
-          selectedValue={uiStore.view.thumbnailSize}
+          inline
+          selectedValue={uiStore.thumbnailSize}
           onChange={() => undefined}
           label="Thumbnail size"
-          inline
         >
-          <Radio label="Small" value="small" onClick={uiStore.view.setThumbnailSmall} />
-          <Radio label="Medium" value="medium" onClick={uiStore.view.setThumbnailMedium} />
-          <Radio label="Large" value="large" onClick={uiStore.view.setThumbnailLarge} />
+          <Radio label="Small" value="small" onClick={uiStore.setThumbnailSmall} />
+          <Radio label="Medium" value="medium" onClick={uiStore.setThumbnailMedium} />
+          <Radio label="Large" value="large" onClick={uiStore.setThumbnailLarge} />
         </RadioGroup>
 
         <RadioGroup
-          selectedValue={uiStore.view.thumbnailShape}
+          inline
+          selectedValue={uiStore.thumbnailShape}
           onChange={() => undefined}
           label="Thumbnail shape"
-          inline
         >
-          <Radio label="Square" value="square" onClick={uiStore.view.setThumbnailSquare} />
-          <Radio label="Letterbox" value="letterbox" onClick={uiStore.view.setThumbnailLetterbox} />
+          <Radio label="Square" value="square" onClick={uiStore.setThumbnailSquare} />
+          <Radio label="Letterbox" value="letterbox" onClick={uiStore.setThumbnailLetterbox} />
         </RadioGroup>
-
+      </div>
+      <div className="column">
         <Switch
           defaultChecked={remote.getCurrentWindow().isFullScreen()}
           onChange={toggleFullScreen}
@@ -162,18 +150,21 @@ const Settings = observer(() => {
         />
 
         <Switch
-          checked={isRunningInBackground}
+          defaultChecked={RendererMessenger.getIsRunningInBackground()}
           onChange={toggleRunInBackground}
           label="Run in background"
         />
 
         <Switch
-          checked={isClipServerRunning}
+          defaultChecked={RendererMessenger.getIsClipServerEnabled()}
           onChange={toggleClipServer}
           label="Browser extension support"
         />
+      </div>
 
-        <div className="bp3-divider" />
+      <Divider />
+
+      <div>
         {/* Todo: Add support to toggle this */}
         {/* <Switch checked={true} onChange={() => alert('Not supported yet')} label="Generate thumbnails" /> */}
         <FormGroup label="Thumbnail directory">
@@ -208,9 +199,11 @@ const Settings = observer(() => {
             </span>
           </label>
         </FormGroup>
+      </div>
 
-        <div className="bp3-divider" />
+      <Divider />
 
+      <div>
         <ClearDbButton fill position="bottom-left" />
 
         <Button
@@ -221,22 +214,63 @@ const Settings = observer(() => {
         >
           Toggle DevTools
         </Button>
+      </div>
 
-        <br />
+      <br />
 
-        <Callout icon={IconSet.INFO}>
-          <H4 className="bp3-heading inspectorHeading">Tip: Hotkeys</H4>
-          <p>
-            Did you know there are hotkeys?
-            <br />
-            Press&nbsp;
-            <KeyCombo combo="mod+k" />
-            &nbsp;to see them.
-          </p>
-        </Callout>
+      <Callout icon={IconSet.INFO}>
+        <H4 className="bp3-heading inspectorHeading">Tip: Hotkeys</H4>
+        <p>
+          Did you know there are hotkeys available in most panels?
+          <br />
+          Press&nbsp;
+          <KeyCombo combo="mod+k" />
+          &nbsp;to see them.
+        </p>
+      </Callout>
+    </div>
+  );
+});
+
+export const SettingsDrawer = observer(() => {
+  const { uiStore } = useContext(StoreContext);
+  return (
+    <Drawer
+      isOpen={uiStore.isSettingsOpen}
+      icon={IconSet.SETTINGS}
+      onClose={uiStore.toggleSettings}
+      title="Settings"
+      className="settings-drawer"
+    >
+      <div className={Classes.DRAWER_BODY}>
+        <SettingsForm />
       </div>
     </Drawer>
   );
 });
 
-export default Settings;
+export const SettingsWindow: React.FC = observer(() => {
+  const { uiStore } = useContext(StoreContext);
+
+  if (!uiStore.isSettingsOpen) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* <SettingsDrawer /> */}
+      <PopupWindow
+        onClose={uiStore.closeSettings}
+        windowName="settings"
+        closeOnEscape
+        additionalCloseKey={uiStore.hotkeyMap.toggleSettings}
+      >
+        <div id="settings-window" className={uiStore.theme === 'LIGHT' ? 'bp3-light' : 'bp3-dark'}>
+          <SettingsForm />
+        </div>
+      </PopupWindow>
+    </>
+  );
+});
+
+export default SettingsWindow;

@@ -1,6 +1,5 @@
-import React, { useContext, useState, useCallback, useMemo } from 'react';
+import React, { useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import fs from 'fs';
-import path from 'path';
 import { observer } from 'mobx-react-lite';
 
 import StoreContext from '../../contexts/StoreContext';
@@ -8,9 +7,12 @@ import ImageInfo from '../../components/ImageInfo';
 import FileTags from '../../components/FileTag';
 import { ClientFile } from '../../../entities/File';
 import { clamp } from '@blueprintjs/core/lib/esm/common/utils';
+import { CSSTransition } from 'react-transition-group';
+import { H5, H6 } from '@blueprintjs/core';
+import { MissingImageFallback } from '../ContentView/GalleryItem';
 
 const sufixes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-const getBytes = (bytes: number) => {
+const getBytesHumanReadable = (bytes: number) => {
   if (bytes <= 0) {
     return '0 Bytes';
   }
@@ -19,11 +21,7 @@ const getBytes = (bytes: number) => {
 };
 
 const MultiFileInfo = observer(({ files }: { files: ClientFile[] }) => {
-  return (
-    <section>
-      <p>Selected {files.length} files</p>
-    </section>
-  );
+  return <section>Selected {files.length} files</section>;
 });
 
 const Carousel = ({ items }: { items: ClientFile[] }) => {
@@ -36,106 +34,138 @@ const Carousel = ({ items }: { items: ClientFile[] }) => {
     const padding = Array.from(Array(maxItems - 1));
     setScrollIndex(items.length - 1);
     return [...padding, ...items];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    const delta = e.deltaY > 0 ? -1 : 1;
-    setScrollIndex((v) => clamp((v + delta), 0, paddedItems.length - 1));
-  }, [paddedItems.length]);
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      const delta = e.deltaY > 0 ? -1 : 1;
+      setScrollIndex((v) => clamp(v + delta, 0, paddedItems.length - 1));
+    },
+    [paddedItems.length],
+  );
 
   return (
-    <div id="carousel" onWheel={handleWheel}>
+    <div
+      role="region"
+      className="carousel"
+      aria-roledescription="carousel"
+      aria-label="Gallery Selection"
+      aria-live="polite"
+      onWheel={handleWheel}
+    >
       {/* Show a stack of the first N images (or fewer) */}
-      {paddedItems.slice(scrollIndex, scrollIndex + maxItems)
-        .map((file, index) => !file ? null : (
+      {paddedItems.slice(scrollIndex, scrollIndex + maxItems).map((file, index) =>
+        !file ? null : (
           <div
             key={file.id}
-            className={`item child-${index
-              // TODO: Could add in and out transition, but you'd also need to know the scroll direction for that
-              // }${index === 0 ? ' item-enter' : ''
-              // }${index === maxItems - 1 ? ' item-exit' : ''
-            }`}
+            // TODO: Could add in and out transition, but you'd also need to know the scroll direction for that
+            className={`carousel-slide child-${index}`}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${scrollIndex + index + 1} of ${items.length}`}
           >
             {/* TODO: Thumbnail path is not always resolved atm, working on that in another branch */}
-            <img src={file.thumbnailPath} onClick={() => setScrollIndex(scrollIndex - maxItems + 1 + index)} />
+            <img
+              src={file.thumbnailPath}
+              onClick={() => setScrollIndex(scrollIndex - maxItems + 1 + index)}
+            />
           </div>
-      ))}
+        ),
+      )}
     </div>
-  )
+  );
+};
+
+interface IContainer {
+  children: ReactNode;
 }
 
-const Inspector = observer(() => {
+const Container = observer(({ children }: IContainer) => {
   const { uiStore } = useContext(StoreContext);
-  const selectedFiles = uiStore.clientFileSelection;
+  return (
+    <CSSTransition
+      in={uiStore.isInspectorOpen}
+      classNames="sliding-sidebar"
+      // Note: timeout needs to equal the transition time in CSS
+      timeout={200}
+      unmountOnExit
+    >
+      <aside id="inspector">{children}</aside>
+    </CSSTransition>
+  );
+});
 
-  let selectionPreview;
-  let headerText;
-  let headerSubtext;
+const Inspector = observer(() => {
+  const { uiStore, fileStore } = useContext(StoreContext);
+  const selectedFiles = uiStore.fileSelection;
 
-  if (selectedFiles.length === 0) {
-    headerText = 'No image selected';
-  } else if (selectedFiles.length === 1) {
-    const singleFile = selectedFiles[0];
-    const ext = singleFile.path.substr(singleFile.path.lastIndexOf('.') + 1).toUpperCase();
-    selectionPreview = (
+  if (selectedFiles.size === 0) {
+    return (
+      <Container>
+        <H6>
+          <i>No image selected</i>
+        </H6>
+      </Container>
+    );
+  }
+
+  let selectionPreview: ReactNode;
+  let title: string;
+  let subTitle: string | undefined;
+
+  if (selectedFiles.size === 1) {
+    const singleFile = fileStore.get(uiStore.getFirstSelectedFileId())!;
+    selectionPreview = singleFile.isBroken ? (
+      <MissingImageFallback />
+    ) : (
       <img
-        src={singleFile.path}
-        style={{ cursor: uiStore.view.isSlideMode ? undefined : 'zoom-in' }}
-        onClick={uiStore.view.enableSlideMode}
+        src={singleFile.absolutePath}
+        style={{ cursor: uiStore.isSlideMode ? undefined : 'zoom-in' }}
+        onClick={uiStore.enableSlideMode}
       />
     );
-    headerText = path.basename(singleFile.path);
-    headerSubtext = `${ext} image - ${getBytes(fs.statSync(singleFile.path).size)}`;
+    title = singleFile.filename;
+    try {
+      const size = getBytesHumanReadable(fs.statSync(singleFile.absolutePath).size);
+      subTitle = `${singleFile.extension.toUpperCase()} image - ${size}`;
+    } catch (err) {
+      console.warn(err);
+    }
   } else {
-    // Todo: fs.stat (not sync) is preferred, but it seems to execute instantly... good enough for now
-    const size = selectedFiles.reduce((sum, f) => sum + fs.statSync(f.path).size, 0);
-
+    const selectedClientFiles = uiStore.clientFileSelection;
     // Stack effects: https://tympanus.net/codrops/2014/03/05/simple-stack-effects/
-    // TODO: Would be nice to hover over an image and that all images before that get opacity 0.1
-    // Or their transform is adjusted so they're more spread apart or something
-    // TODO: Maybe a dropshadow?
-    selectionPreview = (
-      // <figure id="stack" className="stack-queue">
-      //   {/* Show a stack of the first 5 images (with some css magic - the 5 limit is also hard coded in there) */}
-      //   {selectedFiles.slice(0, 5).map((file) => (
-      //     <img src={file.thumbnailPath} key={file.id} />
-      //   ))}
-      // </figure>
-      <Carousel items={selectedFiles} />
-    );
-    headerText = `${selectedFiles[0].name} and ${selectedFiles.length - 1} more`;
-    headerSubtext = getBytes(size);
+    selectionPreview = <Carousel items={selectedClientFiles} />;
+    title = `${selectedClientFiles[0].filename} and ${selectedFiles.size - 1} more`;
+    try {
+      // Todo: fs.stat (not sync) is preferred, but it seems to execute instantly... good enough for now
+      const size = selectedClientFiles.reduce(
+        (sum, f) => sum + fs.statSync(f.absolutePath).size,
+        0,
+      );
+      subTitle = getBytesHumanReadable(size);
+    } catch (error) {
+      console.warn(error);
+    }
   }
 
-  if (selectedFiles.length > 0) {
-    return (
-      <aside id="inspector" className={`${uiStore.isInspectorOpen ? 'inspectorOpen' : ''}`}>
-        <section id="filePreview">{selectionPreview}</section>
-
-        <section id="fileOverview">
-          <div className="inpectorHeading">{headerText}</div>
-          <small>{headerSubtext}</small>
-        </section>
-
-        {selectedFiles.length === 1 ? (
-          <ImageInfo file={selectedFiles[0]} />
-        ) : (
-          <MultiFileInfo files={selectedFiles} />
-        )}
-        <FileTags files={selectedFiles} />
-      </aside>
-    );
-  } else {
-    return (
-      <aside id="inspector" className={`${uiStore.isInspectorOpen ? 'inspectorOpen' : ''}`}>
-        <section id="filePreview" />
-        <section id="fileOverview">
-          <div className="inpectorHeading">{headerText}</div>
-        </section>
-      </aside>
-    );
-  }
+  return (
+    <Container>
+      <figure className="inspector-figure">
+        {selectionPreview}
+        <figcaption>
+          <H5>{title}</H5>
+          {subTitle && <small>{subTitle}</small>}
+        </figcaption>
+      </figure>
+      {selectedFiles.size === 1 ? (
+        <ImageInfo file={fileStore.get(uiStore.getFirstSelectedFileId())!} />
+      ) : (
+        <MultiFileInfo files={uiStore.clientFileSelection} />
+      )}
+      <FileTags files={uiStore.clientFileSelection} />
+    </Container>
+  );
 });
 
 export default Inspector;
