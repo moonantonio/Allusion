@@ -51,11 +51,48 @@ export default class Backend {
     }
   }
 
-  async exportLocation(location: ILocation) {
+  async exportLocation(location: ILocation): Promise<void> {
     console.log('Backend: Exporting location...', location);
+
+    // Only export tags (and collections) used in this location: First find which ones that are
+    const locationFiles = await this.fileRepository.collection
+      .where('locationId')
+      .equals(location.id)
+      .toArray();
+    const tagsUsedInLocation = new Set<ID>();
+    locationFiles.forEach((file) => file.tags.forEach((tagId) => tagsUsedInLocation.add(tagId)));
+
+    const allCollections = await this.tagCollectionRepository.getAll({});
+    const allCollectionsWithParent = allCollections.map((col) => ({
+      ...col,
+      parent: allCollections.find((otherCol) => otherCol.subCollections.includes(col.id))?.id,
+    }));
+    const collectionsUsedInLocation = new Set<ID>();
+    allCollectionsWithParent.forEach((col) => {
+      if (!collectionsUsedInLocation.has(col.id)) {
+        console.log(
+          col,
+          col.tags.some((tagId) => tagsUsedInLocation.has(tagId)),
+        );
+        if (col.tags.some((tagId) => tagsUsedInLocation.has(tagId))) {
+          // Add this collection and its parent(s) too
+          let it: typeof col | undefined = col;
+          while (it?.parent) {
+            if (collectionsUsedInLocation.has(it.id)) break;
+            collectionsUsedInLocation.add(it.id);
+            it = allCollectionsWithParent.find((c) => c.id === it!.parent);
+          }
+        }
+      }
+    });
+    console.log(allCollectionsWithParent, collectionsUsedInLocation);
+
     const opts: ExportOptions = {
       prettyJson: true,
-      progressCallback: (prog) => { console.log(prog); return true; },
+      progressCallback: (prog) => {
+        console.log(prog);
+        return true;
+      },
       filter: (table, value) => {
         if (table === this.fileRepository.collectionName) {
           // Only export files in this location
@@ -63,30 +100,46 @@ export default class Backend {
         } else if (table === this.locationRepository.collectionName) {
           // Only export this location
           return (value as ILocation).id === location.id;
+        } else if (table === this.tagRepository.collectionName) {
+          // Only export tags and tag-collections used in this location
+          return tagsUsedInLocation.has((value as ITag).id);
+        } else if (table === this.tagCollectionRepository.collectionName) {
+          return collectionsUsedInLocation.has((value as ITagCollection).id);
         }
         return true;
       },
     };
 
     const exportBlob = await exportDB(this.db as any, opts); // not sure why db isn't correctly reconized
-    exportBlob.text().then((text) => console.log(JSON.parse(text)));
+    exportBlob.text().then((text) => console.log('Exported data', JSON.parse(text)));
     const buf = await exportBlob.arrayBuffer();
     await writeFile(path.join(location.path, 'allusion.json'), Buffer.from(buf));
   }
 
-  async importLocation(location: ILocation) {
+  async importLocation(location: ILocation): Promise<void> {
     console.log('Backend: Importing location...', location);
     const opts: ImportOptions = {
       overwriteValues: true, // todo: only overwrite if modifiedDate is later than our database?
-      progressCallback: (prog) => { console.log(prog); return true; },
+      progressCallback: (prog) => {
+        console.log(prog);
+        return true;
+      },
     };
+
+    // TODO: Store file paths with / instead of \\ for cross platform use
 
     const exportedData = await readFile(path.join(location.path, 'allusion.json'));
     const blob = new Blob([exportedData]);
-    blob.text().then((text) => console.log(JSON.parse(text)));
+    // TODO: Manually go through importedData and import that instead, not the raw blob:
+    // const importedData = JSON.parse(await blob.text());
+    // Merge files changes in case file was modified on both ends
+    // Merge duplicates files in case they were added on both clients (with a different ID)
+    // Should check the modified date of the allusion.json file (or put it in the file itself)
+    // And also the modifiedDate of individual Files/tags/collections
+    // TODO: Also, add any collection without a parent to the root Hierarchy collection
     await importInto(this.db as any, blob, opts);
 
-    // TODO: a 'isSyncEnabled' field - automatically import/export
+    // TODO: a 'isSyncEnabled' field - automatically import/export on change/every x minutes
 
     // TODO: Store 'latestSync' date in local storage, per location
     // we'll inevitably also need features like 'merge tags' and 'merge collections'
@@ -96,11 +149,44 @@ export default class Backend {
     // Todo: return summary of changes (difference)
 
     // TODO: When creating a location, check if there is an "allusion.json" file, and use that to initialize
+    // Implemented this ^
 
     // TODO: If a file is created on two different clients, it will get a unique ID for both of them
     // This will not be accepted by the bulkPut in the import function; should be manually resolved:
     // - if error occurs, check manually for duplicate entries and resolve them
     // - otherwise, provide option to user to replace the collection with the new data, or to keep the current data
+  }
+
+  /** @deprecated not used, alternative solution to the dexie-import-export lib */
+  async exportLocationAttempt2(location: ILocation) {
+    // Manually import/export: https://dexie.org/docs/ExportImport/dexie-export-import#background--why
+    const db = this.db;
+    // TODO: Only export data from this location, not all tables
+    // TODO: Take care with dates
+    const tableData = db.transaction('r', db.tables, () =>
+      Promise.all(
+        db.tables.map((table) =>
+          table.toArray().then((rows) => ({ table: table.name, rows: rows })),
+        ),
+      ),
+    );
+    console.log(tableData);
+    // write to file
+  }
+
+  /** @deprecated not used, alternative solution to the dexie-import-export lib */
+  async importLocationAttempt2(data: any) {
+    const db = this.db;
+    return db.transaction('rw', db.tables, () => {
+      return Promise.all(
+        data.map((t: any) =>
+          db
+            .table(t.table)
+            .clear()
+            .then(() => db.table(t.table).bulkAdd(t.rows)),
+        ),
+      );
+    });
   }
 
   async fetchTags(): Promise<ITag[]> {
@@ -228,6 +314,7 @@ export default class Backend {
     if (exportExists) {
       console.log('Found export!');
       this.importLocation(dir);
+      return dir;
     } else {
       return this.locationRepository.create(dir);
     }
