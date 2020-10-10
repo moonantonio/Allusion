@@ -314,3 +314,13 @@ export const isDirEmpty = async (dir: string) => {
   const dirContents = await fse.readdir(dir);
   return dirContents.length === 0 || (dirContents.length === 1 && dirContents[0] === '.DS_Store');
 };
+
+const isWin = process.platform === 'win32';
+/** Normalizes paths for all platforms: Replaces backslash (\) with forward slash (/) */
+export function normalizePath(input: string) {
+  if (isWin) {
+    // only on windows: on *nix platforms, backslash is a valid file/folder name character
+    return input.replace(/\\/gi, '/');
+  }
+  return input;
+}

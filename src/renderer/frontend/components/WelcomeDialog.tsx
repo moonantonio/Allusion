@@ -10,6 +10,7 @@ import { remote } from 'electron';
 import StoreContext from '../contexts/StoreContext';
 import { RendererMessenger } from '../../../Messaging';
 import { DEFAULT_LOCATION_ID } from '../../entities/Location';
+import { normalizePath } from '../utils';
 
 const WelcomeStep = () => {
   return (
@@ -136,11 +137,12 @@ const WelcomeDialog = () => {
     if (step === 0) {
       setStep(step + 1);
     } else if (step === 1) {
+      const normalizedPath = normalizePath(importLocation);
       // Make directory in case not exists
-      fse.ensureDirSync(importLocation);
+      fse.ensureDirSync(normalizedPath);
 
       // Create the first Location
-      await locationStore.setDefaultLocation(importLocation);
+      await locationStore.setDefaultLocation(normalizedPath);
       setStep(step + 1);
     } else if (step === 2) {
       setStep(step + 1);

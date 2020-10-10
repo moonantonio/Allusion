@@ -11,7 +11,7 @@ import { RendererMessenger } from '../../../Messaging';
 import { ClientStringSearchCriteria } from '../../entities/SearchCriteria';
 import { AppToaster } from '../App';
 import { ProgressBar } from '@blueprintjs/core';
-import { promiseAllLimit, timeoutPromise, timeout } from '../utils';
+import { promiseAllLimit, timeoutPromise, timeout, normalizePath } from '../utils';
 
 class LocationStore {
   private backend: Backend;
@@ -38,7 +38,9 @@ class LocationStore {
     const dirs = await this.backend.getWatchedDirectories('dateAdded', 'ASC');
 
     const locations = dirs.map(
-      (dir) => new ClientLocation(this, dir.id, dir.path, dir.dateAdded, dir.tagsToAdd),
+      (dir) =>
+        // TODO: normalizePath should be needed here? Why does it still have backslashes??
+        new ClientLocation(this, dir.id, normalizePath(dir.path), dir.dateAdded, dir.tagsToAdd),
     );
 
     runInAction(() => {
@@ -190,28 +192,30 @@ class LocationStore {
       console.warn('Default location not found. This should only happen on first launch!');
       this.addLocation(DEFAULT_LOCATION_ID, dir);
       return;
+    } else {
+      loc.path = normalizePath(dir);
     }
-    loc.path = dir;
     await this.backend.saveLocation(loc.serialize());
     // Todo: What about the files inside that loc? Keep them in DB? Move them over?
-    RendererMessenger.setDownloadPath({ dir });
+    RendererMessenger.setDownloadPath({ dir: loc.path });
   }
 
   @action.bound async changeLocationPath(location: ClientLocation, newPath: string) {
+    const normalizedPath = normalizePath(newPath);
     // First, update the absolute path of all files from this location
     const locFiles = await this.findLocationFiles(location.id);
     await Promise.all(
       locFiles.map((f) =>
         this.backend.saveFile({
           ...f,
-          absolutePath: SysPath.join(newPath, f.relativePath),
+          absolutePath: SysPath.join(normalizedPath, f.relativePath),
         }),
       ),
     );
 
     runInAction(() => {
       // Then, update the path of the location
-      location.path = newPath;
+      location.path = normalizedPath;
       this.save(location.serialize());
     });
     location.setBroken(false);
@@ -336,13 +340,13 @@ class LocationStore {
   }
 
   @action private async addLocation(id: ID, path: string): Promise<ClientLocation> {
-    const location = new ClientLocation(this, id, path);
+    const normalizedPath = normalizePath(path);
+    const location = new ClientLocation(this, id, normalizedPath);
     await this.backend.createLocation(location.serialize());
     runInAction(() => this.locationList.push(location));
     return location;
   }
 
-  
   async exportLocation(location: ILocation) {
     await this.backend.exportLocation(location);
   }

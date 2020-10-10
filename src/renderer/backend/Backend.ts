@@ -94,6 +94,7 @@ export default class Backend {
         return true;
       },
       filter: (table, value) => {
+        console.log({ table, value });
         if (table === this.fileRepository.collectionName) {
           // Only export files in this location
           return (value as IFile).locationId === location.id;
@@ -124,9 +125,13 @@ export default class Backend {
         console.log(prog);
         return true;
       },
+      filter: (table, value) => {
+        if (table === this.locationRepository.collectionName) {
+          value.path = location.path; // not sure if this works
+        }
+        return true;
+      },
     };
-
-    // TODO: Store file paths with / instead of \\ for cross platform use
 
     const exportedData = await readFile(path.join(location.path, 'allusion.json'));
     const blob = new Blob([exportedData]);
@@ -138,6 +143,19 @@ export default class Backend {
     // And also the modifiedDate of individual Files/tags/collections
     // TODO: Also, add any collection without a parent to the root Hierarchy collection
     await importInto(this.db as any, blob, opts);
+
+    // Reset the original location path (?)
+    // const insertedLoc = this.locationRepository.update();
+
+    // De-dupe the collections: Tags and subcollections are added to existing lists when importing
+    const collections = await this.tagCollectionRepository.getAll({});
+    for (const col of collections) {
+      col.subCollections = col.subCollections.filter(
+        (subCol, i) => col.subCollections.lastIndexOf(subCol) !== i,
+      );
+      col.tags = col.tags.filter((tag, i) => col.tags.lastIndexOf(tag) !== i);
+      await this.tagCollectionRepository.update(col);
+    }
 
     // TODO: a 'isSyncEnabled' field - automatically import/export on change/every x minutes
 
@@ -313,7 +331,7 @@ export default class Backend {
     const exportExists = await pathExists(path.join(dir.path, 'allusion.json'));
     if (exportExists) {
       console.log('Found export!');
-      this.importLocation(dir);
+      await this.importLocation(dir);
       return dir;
     } else {
       return this.locationRepository.create(dir);

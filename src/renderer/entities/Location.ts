@@ -10,6 +10,7 @@ import { ClientTag } from './Tag';
 import { RECURSIVE_DIR_WATCH_DEPTH } from '../../config';
 import { AppToaster } from '../frontend/App';
 import IconSet from 'components/Icons';
+import { normalizePath } from '../frontend/utils';
 
 export const DEFAULT_LOCATION_ID: ID = 'default-location';
 
@@ -197,7 +198,12 @@ export class ClientLocation implements ISerializable<ILocation> {
             console.log('Cancelling file watching');
             await watcher.close();
           }
-          if (IMG_EXTENSIONS.some((ext) => SysPath.extname(path).endsWith(ext))) {
+          if (!path) {
+            console.warn('not a string?', path);
+            return;
+          }
+          const normalizedPath = normalizePath(path);
+          if (IMG_EXTENSIONS.some((ext) => SysPath.extname(normalizedPath).endsWith(ext))) {
             // Todo: ignore dot files/dirs?
             if (this.isReady) {
               console.log(`File ${path} has been added after initialization`);
@@ -216,14 +222,29 @@ export class ClientLocation implements ISerializable<ILocation> {
               );
 
               // Add to backend
-              this.store.createFileFromPath(path, this);
+              this.store.createFileFromPath(normalizedPath, this);
             } else {
-              initialFiles.push(path);
+              initialFiles.push(normalizedPath);
             }
           }
         })
-        // TODO: If 'allusion.json' changes, import location changes
-        .on('change', (path: string) => console.log(`File ${path} has been changed`))
+        .on('change', (path: string) => {
+          console.log(`File ${path} has been changed`);
+          // If 'allusion.json' changes, import location changes
+          // But not when this machine did the export...?
+          const filename = SysPath.basename(path);
+          // TODO: Show notifiction icon in location list
+          if (filename === 'allusion.json') {
+            AppToaster.show({
+              message: `Location ${this.name} was updated elsewhere. Import changes now?`,
+              intent: 'primary',
+              action: {
+                icon: 'updated',
+                onClick: () => this.store.importLocation(this),
+              },
+            });
+          }
+        })
         .on('unlink', (path: string) => {
           console.log(`Location "${this.name}": File ${path} has been removed.`);
           const fileStore = this.store.rootStore.fileStore;

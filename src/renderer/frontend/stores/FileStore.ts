@@ -6,7 +6,13 @@ import { ClientFile, IFile, getMetaData } from '../../entities/File';
 import RootStore from './RootStore';
 import { ID, generateId } from '../../entities/ID';
 import { SearchCriteria, ClientArraySearchCriteria } from '../../entities/SearchCriteria';
-import { getThumbnailPath, debounce, needsThumbnail, promiseAllLimit } from '../utils';
+import {
+  getThumbnailPath,
+  debounce,
+  needsThumbnail,
+  promiseAllLimit,
+  normalizePath,
+} from '../utils';
 import { ClientTag } from '../../entities/Tag';
 import { FileOrder } from '../../backend/DBRepository';
 import { ClientLocation } from '../../entities/Location';
@@ -89,15 +95,16 @@ class FileStore {
 
   @action.bound async addFile(path: string, locationId: ID, dateAdded: Date = new Date()) {
     const loc = this.rootStore.locationStore.get(locationId)!;
+    const normalizedPath = normalizePath(path);
     const file = new ClientFile(this, {
       id: generateId(),
       locationId,
-      absolutePath: path,
-      relativePath: path.replace(loc.path, ''),
+      absolutePath: normalizedPath,
+      relativePath: normalizedPath.replace(loc.path, ''),
       dateAdded: dateAdded,
       dateModified: new Date(),
       tags: [],
-      ...(await getMetaData(path)),
+      ...(await getMetaData(normalizedPath)),
     });
     // The function caller is responsible for handling errors.
     await this.backend.createFile(file.serialize());
