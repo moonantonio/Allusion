@@ -65,6 +65,8 @@ export class ClientLocation implements ISerializable<ILocation> {
   @observable isInitialized = false;
   // true when the path no longer exists (broken link)
   @observable isBroken = false;
+  //
+  @observable isExternalUpdateAvailable = false;
 
   readonly tagsToAdd = observable<ID>([]);
 
@@ -147,6 +149,10 @@ export class ClientLocation implements ISerializable<ILocation> {
   @action.bound setBroken(state: boolean): void {
     this.isBroken = state;
     this.autoSave = !this.isBroken;
+  }
+
+  @action.bound setExternalUpdateAvailable(state: boolean): void {
+    this.isExternalUpdateAvailable = state;
   }
 
   @action.bound addTag(tag: ClientTag): void {
@@ -237,6 +243,7 @@ export class ClientLocation implements ISerializable<ILocation> {
           if (filename === 'allusion.json') {
             const wasUpdatedExternally = await this.store.isLocationUpdatedExternally(this);
             if (wasUpdatedExternally) {
+              this.setExternalUpdateAvailable(true);
               AppToaster.show({
                 message: `Location ${this.name} was updated elsewhere. Import changes now?`,
                 intent: 'primary',
@@ -273,6 +280,10 @@ export class ClientLocation implements ISerializable<ILocation> {
           this.isReady = true;
           console.log(`Location "${this.name}" ready. Detected files:`, initialFiles.length);
           // Todo: Compare this in DB, add new files and mark missing files as missing
+
+          // TODO: If "allusion.json" exists, don't import files, as they should already be defined in the export file
+          // otherwise you end up with duplicates!
+          // But only when this location is created for the first time, else new files will never be detected!
           resolve(initialFiles);
         })
         .on('error', (error: Error) => {

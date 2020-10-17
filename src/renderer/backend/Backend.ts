@@ -73,6 +73,7 @@ export default class Backend {
       parent: allCollections.find((otherCol) => otherCol.subCollections.includes(col.id))?.id,
     }));
     const collectionsUsedInLocation = new Set<ID>();
+    collectionsUsedInLocation.add(ROOT_TAG_COLLECTION_ID);
 
     allCollectionsWithParent.forEach((col) => {
       if (!collectionsUsedInLocation.has(col.id)) {
@@ -177,8 +178,13 @@ export default class Backend {
     await importInto(this.db as any, blob, opts);
 
     // Reset the original location path (?)
-    const insertedLoc = await this.locationRepository.get(location.id);
-    if (!insertedLoc) throw new Error('Updated location not found!');
+    let insertedLoc = await this.locationRepository.get(location.id);
+    // If location doesn't exist yet, it is being imported for the first time, find the last created one instead
+    if (!insertedLoc) {
+      insertedLoc = (
+        await this.locationRepository.getAll({ order: 'dateAdded', fileOrder: 'DESC', count: 1 })
+      )[0];
+    }
     insertedLoc.path = location.path;
     await this.locationRepository.update(insertedLoc);
 
@@ -187,6 +193,7 @@ export default class Backend {
     // also remove tag ids that don't exist in the tag repo: Workaround since exported collections might still contain unused tags that were not exported
     const allTags = await this.tagRepository.getAll({});
     const allTagIds = new Set(allTags.map((t) => t.id));
+    console.log(collections, allTagIds);
     for (const col of collections) {
       col.subCollections = [...new Set(col.subCollections)];
       col.tags = [...new Set(col.tags)].filter((t) => allTagIds.has(t));

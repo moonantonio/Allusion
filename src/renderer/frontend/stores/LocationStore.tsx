@@ -356,11 +356,11 @@ class LocationStore {
     // TODO: Would be nice to know whether the import changed anything as a toast
 
     // Check for updated tags
-    this.rootStore.tagStore.init();
-    this.rootStore.tagCollectionStore.init();
+    // this.rootStore.tagStore.init();
+    // this.rootStore.tagCollectionStore.init();
 
-    // And files (and their tags)
-    this.rootStore.fileStore.refetch();
+    // // And files (and their tags)
+    // this.rootStore.fileStore.refetch();
   }
 
   async isLocationUpdatedExternally(location: ILocation) {

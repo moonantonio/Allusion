@@ -11,6 +11,7 @@ import {
   Dialog,
   Label,
   ContextMenu,
+  Icon,
 } from '@blueprintjs/core';
 
 import StoreContext from 'src/renderer/frontend/contexts/StoreContext';
@@ -250,17 +251,31 @@ const LocationTreeContextMenu = ({
       <MenuItem text="Configure" onClick={openConfigDialog} icon={IconSet.SETTINGS} />
       <DirectoryMenu path={location.path} uiStore={uiStore} />
       <MenuItem
-        onClick={() => location && locationStore.exportLocation(location)
-          .then(() => AppToaster.show({ message: 'Exported!', intent: 'success' }))
-          .catch((e: Error) => void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }))}
+        onClick={() =>
+          location &&
+          locationStore
+            .exportLocation(location)
+            .then(() => AppToaster.show({ message: 'Exported!', intent: 'success' }))
+            .catch(
+              (e: Error) =>
+                void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }),
+            )
+        }
         text="Export to file"
         icon="export"
         disabled={!location}
       />
       <MenuItem
-        onClick={() => location && locationStore.importLocation(location)
-          .then(() => AppToaster.show({ message: 'Imported!', intent: 'success' }))
-          .catch((e: Error) => void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }))}
+        onClick={() =>
+          location &&
+          locationStore
+            .importLocation(location)
+            .then(() => AppToaster.show({ message: 'Imported!', intent: 'success' }))
+            .catch(
+              (e: Error) =>
+                void console.error(e) || AppToaster.show({ message: e.message, intent: 'danger' }),
+            )
+        }
         text="Import from file"
         icon="import"
         disabled={!location}
@@ -362,6 +377,14 @@ const Location = observer(
             onClick={() => treeData.uiStore.openLocationRecovery(nodeData.id)}
           >
             {IconSet.WARNING}
+          </span>
+        )}
+        {nodeData.isExternalUpdateAvailable && (
+          <span
+            className="after-icon"
+            onClick={() => treeData.locationStore.importLocation(nodeData)}
+          >
+            {<Icon icon="notifications-updated" />}
           </span>
         )}
       </div>
