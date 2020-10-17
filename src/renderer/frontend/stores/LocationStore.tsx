@@ -363,6 +363,10 @@ class LocationStore {
     this.rootStore.fileStore.refetch();
   }
 
+  async isLocationUpdatedExternally(location: ILocation) {
+    return this.backend.exportFileWasCreatedExternally(location);
+  }
+
   private async pathToIFile(path: string, loc: ClientLocation): Promise<IFile> {
     return {
       absolutePath: path,

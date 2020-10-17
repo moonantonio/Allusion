@@ -11,6 +11,7 @@ import Dexie from 'dexie';
 import { exportDB, importInto, ExportOptions, ImportOptions } from 'dexie-export-import';
 import { writeFile, readFile, pathExists } from 'fs-extra';
 import path from 'path';
+import os from 'os';
 
 /**
  * The backend of the application serves as an API, even though it runs on the same machine.
@@ -51,6 +52,10 @@ export default class Backend {
     }
   }
 
+  getSystemIdentifier(): string {
+    return `${os.hostname()}, ${os.type()}`;
+  }
+
   async exportLocation(location: ILocation): Promise<void> {
     console.log('Backend: Exporting location...', location);
 
@@ -68,6 +73,7 @@ export default class Backend {
       parent: allCollections.find((otherCol) => otherCol.subCollections.includes(col.id))?.id,
     }));
     const collectionsUsedInLocation = new Set<ID>();
+
     allCollectionsWithParent.forEach((col) => {
       if (!collectionsUsedInLocation.has(col.id)) {
         console.log(
@@ -85,7 +91,7 @@ export default class Backend {
         }
       }
     });
-    console.log(allCollectionsWithParent, collectionsUsedInLocation);
+    console.log({ allCollectionsWithParent, collectionsUsedInLocation });
 
     const opts: ExportOptions = {
       prettyJson: true,
@@ -111,13 +117,38 @@ export default class Backend {
       },
     };
 
-    const exportBlob = await exportDB(this.db as any, opts); // not sure why db isn't correctly reconized
-    exportBlob.text().then((text) => console.log('Exported data', JSON.parse(text)));
-    const buf = await exportBlob.arrayBuffer();
-    await writeFile(path.join(location.path, 'allusion.json'), Buffer.from(buf));
+    // The exportDB func is optimized to export huge databases, but for our use-case they shouldn't be too big,
+    // so we can just json.parse it and modify it a little if needed
+    const exportBlob = await exportDB(this.db as any, opts); // not sure why db type isn't correctly reconized
+    const exportText = await exportBlob.text();
+    const exportObj = JSON.parse(exportText);
+
+    // Add this machine's ID in the JSON, so that when the file is updated,
+    // we can detect that it was this machine that changed it, and no notification has to be shown
+    exportObj.exportSystemId = this.getSystemIdentifier();
+
+    console.log('Exported data', exportObj);
+    await writeFile(path.join(location.path, 'allusion.json'), JSON.stringify(exportObj, null, 2));
   }
 
-  async importLocation(location: ILocation): Promise<void> {
+  async exportFileWasCreatedExternally(location: ILocation): Promise<boolean> {
+    const exportedData = await readFile(path.join(location.path, 'allusion.json'));
+    const blob = new Blob([exportedData]);
+    const exportedDataAsText = await blob.text();
+    const exportedDataAsJSON = JSON.parse(exportedDataAsText);
+    const exportSystemId = exportedDataAsJSON.exportSystemId;
+    if (exportSystemId === this.getSystemIdentifier()) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Imports a location's exported metadata
+   * @param location Which location to import
+   * @returns whether importing has been performed. Returns false e.g. when the export was done by the same machine
+   */
+  async importLocation(location: ILocation): Promise<boolean> {
     console.log('Backend: Importing location...', location);
     const opts: ImportOptions = {
       overwriteValues: true, // todo: only overwrite if modifiedDate is later than our database?
@@ -135,6 +166,7 @@ export default class Backend {
 
     const exportedData = await readFile(path.join(location.path, 'allusion.json'));
     const blob = new Blob([exportedData]);
+
     // TODO: Manually go through importedData and import that instead, not the raw blob:
     // const importedData = JSON.parse(await blob.text());
     // Merge files changes in case file was modified on both ends
@@ -145,15 +177,19 @@ export default class Backend {
     await importInto(this.db as any, blob, opts);
 
     // Reset the original location path (?)
-    // const insertedLoc = this.locationRepository.update();
+    const insertedLoc = await this.locationRepository.get(location.id);
+    if (!insertedLoc) throw new Error('Updated location not found!');
+    insertedLoc.path = location.path;
+    await this.locationRepository.update(insertedLoc);
 
     // De-dupe the collections: Tags and subcollections are added to existing lists when importing
     const collections = await this.tagCollectionRepository.getAll({});
+    // also remove tag ids that don't exist in the tag repo: Workaround since exported collections might still contain unused tags that were not exported
+    const allTags = await this.tagRepository.getAll({});
+    const allTagIds = new Set(allTags.map((t) => t.id));
     for (const col of collections) {
-      col.subCollections = col.subCollections.filter(
-        (subCol, i) => col.subCollections.lastIndexOf(subCol) !== i,
-      );
-      col.tags = col.tags.filter((tag, i) => col.tags.lastIndexOf(tag) !== i);
+      col.subCollections = [...new Set(col.subCollections)];
+      col.tags = [...new Set(col.tags)].filter((t) => allTagIds.has(t));
       await this.tagCollectionRepository.update(col);
     }
 
@@ -162,17 +198,21 @@ export default class Backend {
     // TODO: Store 'latestSync' date in local storage, per location
     // we'll inevitably also need features like 'merge tags' and 'merge collections'
 
-    // Todo: check for duplicate / unreferenced entries (tags/files/collections)
+    // TODONE: check for duplicate / unreferenced entries (tags/files/collections)
 
     // Todo: return summary of changes (difference)
 
-    // TODO: When creating a location, check if there is an "allusion.json" file, and use that to initialize
+    // TODONE: When creating a location, check if there is an "allusion.json" file, and use that to initialize
     // Implemented this ^
 
     // TODO: If a file is created on two different clients, it will get a unique ID for both of them
     // This will not be accepted by the bulkPut in the import function; should be manually resolved:
     // - if error occurs, check manually for duplicate entries and resolve them
     // - otherwise, provide option to user to replace the collection with the new data, or to keep the current data
+
+    // We'll probably need a manual import/export anyways
+
+    return true;
   }
 
   /** @deprecated not used, alternative solution to the dexie-import-export lib */

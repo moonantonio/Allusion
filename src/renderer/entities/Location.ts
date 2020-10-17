@@ -228,21 +228,24 @@ export class ClientLocation implements ISerializable<ILocation> {
             }
           }
         })
-        .on('change', (path: string) => {
+        .on('change', async (path: string) => {
           console.log(`File ${path} has been changed`);
           // If 'allusion.json' changes, import location changes
           // But not when this machine did the export...?
           const filename = SysPath.basename(path);
           // TODO: Show notifiction icon in location list
           if (filename === 'allusion.json') {
-            AppToaster.show({
-              message: `Location ${this.name} was updated elsewhere. Import changes now?`,
-              intent: 'primary',
-              action: {
-                icon: 'updated',
-                onClick: () => this.store.importLocation(this),
-              },
-            });
+            const wasUpdatedExternally = await this.store.isLocationUpdatedExternally(this);
+            if (wasUpdatedExternally) {
+              AppToaster.show({
+                message: `Location ${this.name} was updated elsewhere. Import changes now?`,
+                intent: 'primary',
+                action: {
+                  icon: 'updated',
+                  onClick: () => this.store.importLocation(this),
+                },
+              });
+            }
           }
         })
         .on('unlink', (path: string) => {
