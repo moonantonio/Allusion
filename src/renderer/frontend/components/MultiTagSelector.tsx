@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { ClientTag, ROOT_TAG_ID } from '../../entities/Tag';
@@ -8,6 +8,13 @@ import { Flyout } from 'components/Dialog';
 import { action } from 'mobx';
 import { MenuDivider } from 'components/Menu';
 
+interface IExtraOption {
+  label: string;
+  action: () => void;
+  icon?: JSX.Element;
+  iconIcon?: JSX.Element;
+}
+
 interface IMultiTagSelector {
   selection: ClientTag[];
   onSelect: (item: ClientTag) => void;
@@ -16,7 +23,7 @@ interface IMultiTagSelector {
   onCreate?: (name: string) => Promise<ClientTag>;
   tagLabel?: (item: ClientTag) => string;
   disabled?: boolean;
-  extraOption?: { label: string, action: () => void, icon?: JSX.Element };
+  extraOptions?: (query: string) => IExtraOption[] | IExtraOption[];
 }
 
 const MultiTagSelector = observer(
@@ -28,7 +35,7 @@ const MultiTagSelector = observer(
     onCreate,
     tagLabel = action((t: ClientTag) => t.name),
     disabled,
-    extraOption,
+    extraOptions,
   }: IMultiTagSelector) => {
     const { tagStore } = useContext(StoreContext);
     const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +44,12 @@ const MultiTagSelector = observer(
     const suggestions = tagStore.tagList.filter(
       (t) => t.id !== ROOT_TAG_ID && t.name.toLowerCase().indexOf(normalizedQuery) >= 0,
     );
+    const extraOptionElems = useMemo(() => {
+      if (!extraOptions) return [];
+      return (typeof extraOptions === 'function' ? extraOptions(query) : extraOptions).map((o, i) => (
+        <Option key={`elem-${i}`} value={o.label} onClick={o.action} icon={o.icon} rightIcon={o.iconIcon} />
+      ));
+    }, [extraOptions, query]);
 
     return (
       <div
@@ -106,9 +119,10 @@ const MultiTagSelector = observer(
                 }}
               />
             ) : null}
-            {extraOption && <>
+            {/* Show extra options, e.g. for the tag search bar: open advanced search */}
+            {!!extraOptionElems.length && <>
               <MenuDivider />
-              <Option value={extraOption.label} onClick={extraOption.action} icon={extraOption.icon} />
+              {extraOptionElems}
             </>}
           </Listbox>
         </Flyout>

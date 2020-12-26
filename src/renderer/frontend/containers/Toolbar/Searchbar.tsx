@@ -3,11 +3,12 @@ import { observer } from 'mobx-react-lite';
 import StoreContext from '../../contexts/StoreContext';
 import { IconSet, Tag } from 'components';
 import { ClientTag } from '../../../entities/Tag';
-import { ClientIDSearchCriteria } from '../../../entities/SearchCriteria';
+import { ClientIDSearchCriteria, ClientStringSearchCriteria } from '../../../entities/SearchCriteria';
 import { MultiTagSelector } from '../../components/MultiTagSelector';
 import { action } from 'mobx';
 import UiStore from '../../stores/UiStore';
 import TagStore from '../../stores/TagStore';
+import { KeyCombo } from '@blueprintjs/core';
 
 interface ISearchListProps {
   uiStore: UiStore;
@@ -38,13 +39,29 @@ const QuickSearchList = observer(({ uiStore, tagStore }: ISearchListProps) => {
     }
   });
 
+  const handleExtraOptions = useCallback((query: string) => {
+    return [
+      {
+        label: `Search in file paths for "${query}"`,
+        icon: IconSet.FILTER_NAME_DOWN,
+        action: () => uiStore.addSearchCriteria(new ClientStringSearchCriteria('absolutePath', query, 'contains'))
+      },
+      {
+        label: 'Advanced search',
+        action: uiStore.toggleAdvancedSearch,
+        icon: IconSet.SEARCH_EXTENDED,
+        rightIcon: <KeyCombo minimal combo={uiStore.hotkeyMap.advancedSearch} />,
+      }
+    ];
+  }, [uiStore]);
+
   return (
     <MultiTagSelector
       selection={selectedItems}
       onSelect={handleSelect}
       onDeselect={handleDeselect}
       onClear={uiStore.clearSearchCriteriaList}
-      extraOption={{ label: 'Advanced search', action: uiStore.toggleAdvancedSearch, icon: IconSet.SEARCH_EXTENDED }}
+      extraOptions={handleExtraOptions}
     />
   );
 });
