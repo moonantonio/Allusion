@@ -8,6 +8,7 @@ import UiStore from './UiStore';
 import LocationStore from './LocationStore';
 
 import { RendererMessenger } from 'src/Messaging';
+import { PinnedSearchStore } from '../containers/Outliner/PinnedSearchPanel/context';
 
 // This will throw exceptions whenver we try to modify the state directly without an action
 // Actions will batch state modifications -> better for performance
@@ -29,6 +30,7 @@ class RootStore {
   readonly fileStore: FileStore;
   readonly locationStore: LocationStore;
   readonly uiStore: UiStore;
+  readonly pinnedSearchStore: PinnedSearchStore;
   readonly clearDatabase: () => Promise<void>;
 
   constructor(backend: Backend) {
@@ -36,6 +38,7 @@ class RootStore {
     this.fileStore = new FileStore(backend, this);
     this.locationStore = new LocationStore(backend, this);
     this.uiStore = new UiStore(this);
+    this.pinnedSearchStore = new PinnedSearchStore();
 
     // SAFETY: The backend instance has the same lifetime as the RootStore.
     this.clearDatabase = async () => {

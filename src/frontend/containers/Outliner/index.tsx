@@ -4,6 +4,7 @@ import React, { useContext } from 'react';
 import StoreContext from '../../contexts/StoreContext';
 import LocationsPanel from './LocationsPanel';
 import TagsPanel, { OutlinerActionBar } from './TagsPanel';
+import PinnedSearchPanel from './PinnedSearchPanel';
 
 const Outliner = () => {
   const { uiStore } = useContext(StoreContext);
@@ -13,6 +14,7 @@ const Outliner = () => {
       <div id="outliner-content">
         <LocationsPanel />
         <TagsPanel />
+        <PinnedSearchPanel />
       </div>
       <OutlinerActionBar />
     </Panel>

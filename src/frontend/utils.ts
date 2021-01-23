@@ -328,3 +328,6 @@ export const clamp = (value: number, min: number, max: number): number => {
     return value;
   }
 };
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const emptyFunction = () => {};
