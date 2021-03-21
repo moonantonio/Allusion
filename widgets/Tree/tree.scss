@@ -53,14 +53,14 @@
     }
   }
 
-  &[aria-selected='true'] > .label {
-    color: var(--accent-color-blue);
-    background-color: transparent;
+  // &[aria-selected='true'] > .label {
+  //   color: var(--accent-color-blue);
+  //   background-color: transparent;
 
-    [class*='custom-icon'] {
-      color: var(--accent-color-blue);
-    }
-  }
+  //   [class*='custom-icon'] {
+  //     color: var(--accent-color-blue);
+  //   }
+  // }
 
   &:focus {
     outline: none;

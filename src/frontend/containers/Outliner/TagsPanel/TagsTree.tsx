@@ -7,7 +7,7 @@ import { ClientTag, ROOT_TAG_ID } from 'src/entities/Tag';
 import StoreContext from 'src/frontend/contexts/StoreContext';
 import UiStore from 'src/frontend/stores/UiStore';
 import useContextMenu from 'src/frontend/hooks/useContextMenu';
-import { Checkbox, IconSet, Tree } from 'widgets';
+import { IconSet, Tree } from 'widgets';
 import { Toolbar, ToolbarButton, ContextMenu } from 'widgets/menus';
 import { ITreeItem, createBranchOnKeyDown, createLeafOnKeyDown } from 'widgets/Tree';
 import { TagRemoval } from 'src/frontend/components/RemovalAlert';
@@ -105,7 +105,7 @@ PreviewTag.style.top = '-100vh';
 document.body.appendChild(PreviewTag);
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
-const emptyFn = () => {};
+const emptyFn = (e: React.ChangeEvent<HTMLInputElement>) => {};
 
 const TagItem = observer((props: ITagItemProps) => {
   const { nodeData, dispatch, expansion, isEditing, submit, pos, select, showContextMenu } = props;
@@ -263,8 +263,8 @@ const TagItem = observer((props: ITagItemProps) => {
       onContextMenu={handleContextMenu}
     >
       {!isEditing && (
-        <Checkbox
-          label=""
+        <input
+          type="checkbox"
           checked={uiStore.tagSelection.has(nodeData)}
           onChange={emptyFn}
           onClick={handleSelect}
