@@ -30,7 +30,7 @@ export const Field = ({ id, query, dispatch, removable }: IFieldProps) => (
           })
         }
         disabled={!removable}
-        styling="filled"
+        className="btn-filled"
       />
     </div>
   </fieldset>

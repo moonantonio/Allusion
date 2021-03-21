@@ -22,7 +22,7 @@ export const OutlinerActionBar = observer(() => {
   return (
     <Toolbar id="actionbar" label="Action Bar" controls="content-view">
       <ToolbarToggleButton
-        showLabel="always"
+        showLabel
         text={fileStore.numTotalFiles}
         icon={IconSet.MEDIA}
         onClick={fileStore.fetchAllFiles}
@@ -30,7 +30,7 @@ export const OutlinerActionBar = observer(() => {
         tooltip={TooltipInfo.AllImages}
       />
       <ToolbarToggleButton
-        showLabel="always"
+        showLabel
         text={fileStore.numUntaggedFiles}
         icon={IconSet.TAG_BLANCO}
         onClick={fileStore.fetchUntaggedFiles}
@@ -39,7 +39,7 @@ export const OutlinerActionBar = observer(() => {
       />
       {fileStore.numMissingFiles > 0 && (
         <ToolbarToggleButton
-          showLabel="always"
+          showLabel
           text={fileStore.numMissingFiles}
           icon={IconSet.WARNING_FILL}
           onClick={fileStore.fetchMissingFiles}

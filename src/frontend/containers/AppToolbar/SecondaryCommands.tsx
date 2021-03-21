@@ -9,7 +9,6 @@ import { MenuButton, MenuItem } from 'widgets/menus';
 const SecondaryCommands = observer(({ uiStore }: { uiStore: UiStore }) => {
   return (
     <MenuButton
-      showLabel="never"
       icon={IconSet.MORE}
       text="More"
       tooltip="See more"
@@ -39,7 +38,8 @@ const SecondaryCommands = observer(({ uiStore }: { uiStore: UiStore }) => {
         // TODO: Maybe add as native menu option (mac-os?)
         onClick={() =>
           window.alert(
-            'TODO: This application was made by [us]. It\'s open source. You can contribute here if you wanna [link]',
+            // eslint-disable-next-line quotes
+            "TODO: This application was made by [us]. It's open source. You can contribute here if you wanna [link]",
           )
         }
         text="About"

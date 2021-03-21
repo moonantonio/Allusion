@@ -295,10 +295,10 @@ const SectionPanel = ({ section, subSectionIndex, openPanel, closePanel }: Secti
       ))}
       <br />
       <ButtonGroup>
-        <Button styling="outlined" onClick={closePanel} text="Previous" />
+        <Button className="btn-outlined" onClick={closePanel} text="Previous" />
         {nextSection && (
           <Button
-            styling="outlined"
+            className="btn-outlined"
             onClick={() =>
               openPanel({
                 title: nextSection.title,

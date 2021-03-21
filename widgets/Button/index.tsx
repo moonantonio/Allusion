@@ -5,13 +5,13 @@ interface IButton {
   text: React.ReactText;
   icon?: JSX.Element;
   onClick: (event: React.MouseEvent) => void;
-  styling?: 'minimal' | 'outlined' | 'filled';
+  className?: string;
   disabled?: boolean;
 }
 
-const Button = ({ text, icon, onClick, styling = 'minimal', disabled }: IButton) => {
+const Button = ({ text, icon, onClick, className, disabled }: IButton) => {
   return (
-    <button className={`btn btn-${styling}`} onClick={onClick} disabled={disabled}>
+    <button className={`btn ${className}`} onClick={onClick} disabled={disabled}>
       {icon && (
         <span className="btn-content-icon" aria-hidden="true">
           {icon}
@@ -44,7 +44,7 @@ interface IIconButton {
 
 const IconButton = ({ text, icon, onClick, disabled }: IIconButton) => {
   return (
-    <button className="btn btn-icon" onClick={onClick} disabled={disabled}>
+    <button className="btn-icon" onClick={onClick} disabled={disabled}>
       <span className="btn-content-icon" aria-hidden="true">
         {icon}
       </span>

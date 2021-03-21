@@ -100,7 +100,7 @@ dialog[role='alertdialog'] {
   justify-content: flex-end;
 
   .btn {
-    min-width: 100px;
+    --btn-min-width: 100px;
   }
 }
 

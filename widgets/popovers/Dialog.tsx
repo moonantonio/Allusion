@@ -132,20 +132,20 @@ export const DialogActions = (props: IDialogActions) => {
     <div className="btn-group dialog-actions">
       {props.primaryButtonText ? (
         <Button
-          styling={props.defaultButton === DialogButton.PrimaryButton ? 'filled' : 'outlined'}
+          className={props.defaultButton === DialogButton.PrimaryButton ? 'filled' : 'outlined'}
           text={props.primaryButtonText}
           onClick={() => props.onClick(DialogButton.PrimaryButton)}
         />
       ) : undefined}
       {props.secondaryButtonText ? (
         <Button
-          styling={props.defaultButton === DialogButton.SecondaryButton ? 'filled' : 'outlined'}
+          className={props.defaultButton === DialogButton.SecondaryButton ? 'filled' : 'outlined'}
           text={props.secondaryButtonText}
           onClick={() => props.onClick(DialogButton.SecondaryButton)}
         />
       ) : undefined}
       <Button
-        styling={props.defaultButton === DialogButton.CloseButton ? 'filled' : 'outlined'}
+        className={props.defaultButton === DialogButton.CloseButton ? 'filled' : 'outlined'}
         text={props.closeButtonText}
         onClick={() => props.onClick(DialogButton.CloseButton)}
       />

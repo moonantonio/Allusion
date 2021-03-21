@@ -54,7 +54,7 @@ const Welcome = () => {
       <br />
 
       {/* Mention principles (?) */}
-      <small>Allusion is a read-only application. We'll never touch your files</small>
+      <small>Allusion is a read-only application. We&aposll never touch your files</small>
     </ContentPlaceholder>
   );
 };
@@ -63,7 +63,7 @@ const NoContentFound = ({ uiStore }: { uiStore: UiStore }) => {
   return (
     <ContentPlaceholder title="No images" icon={IconSet.MEDIA}>
       <p>Images can be added from the outliner</p>
-      <Button onClick={uiStore.toggleOutliner} text="Toggle outliner" styling="outlined" />
+      <Button onClick={uiStore.toggleOutliner} text="Toggle outliner" className="btn-outlined" />
     </ContentPlaceholder>
   );
 };
@@ -77,13 +77,13 @@ const NoQueryContent = ({ fileStore }: { fileStore: FileStore }) => {
           text="All images"
           icon={IconSet.MEDIA}
           onClick={fileStore.fetchAllFiles}
-          styling="outlined"
+          className="btn-outlined"
         />
         <Button
           text="Untagged"
           icon={IconSet.TAG_BLANCO}
           onClick={fileStore.fetchUntaggedFiles}
-          styling="outlined"
+          className="btn-outlined"
         />
       </ButtonGroup>
     </ContentPlaceholder>
@@ -98,7 +98,7 @@ const NoUntaggedContent = ({ fileStore }: { fileStore: FileStore }) => {
         text="All Images"
         icon={IconSet.MEDIA}
         onClick={fileStore.fetchAllFiles}
-        styling="outlined"
+        className="btn-outlined"
       />
     </ContentPlaceholder>
   );
@@ -113,13 +113,13 @@ const NoMissingContent = ({ fileStore }: { fileStore: FileStore }) => {
           text="All images"
           icon={IconSet.MEDIA}
           onClick={fileStore.fetchAllFiles}
-          styling="outlined"
+          className="btn-outlined"
         />
         <Button
           text="Untagged"
           icon={IconSet.TAG_BLANCO}
           onClick={fileStore.fetchUntaggedFiles}
-          styling="outlined"
+          className="btn-outlined"
         />
       </ButtonGroup>
     </ContentPlaceholder>

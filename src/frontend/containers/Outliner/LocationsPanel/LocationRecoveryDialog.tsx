@@ -150,39 +150,43 @@ const RecoveryActions = observer(
         // TODO: Refetch on close?
         return (
           <div className="btn-group dialog-actions">
-            <Button styling="outlined" onClick={uiStore.closeLocationRecovery} text="Close" />
+            <Button className="btn-outlined" onClick={uiStore.closeLocationRecovery} text="Close" />
           </div>
         );
 
       case Status.InvalidPath:
         return (
           <div className="btn-group dialog-actions">
-            <Button styling="filled" onClick={locate} text="Locate" />
+            <Button className="btn-filled" onClick={locate} text="Locate" />
             {/* Re-scan option, e.g. for when you mount a drive */}
-            <Button styling="outlined" onClick={rescan} text="Re-Scan" />
-            <Button styling="outlined" onClick={uiStore.closeLocationRecovery} text="Cancel" />
+            <Button className="btn-outlined" onClick={rescan} text="Re-Scan" />
+            <Button
+              className="btn-outlined"
+              onClick={uiStore.closeLocationRecovery}
+              text="Cancel"
+            />
           </div>
         );
 
       case Status.NoMatches:
         return (
           <div className="btn-group dialog-actions">
-            <Button styling="outlined" onClick={retry} text="Retry" />
+            <Button className="btn-outlined" onClick={retry} text="Retry" />
           </div>
         );
 
       case Status.PartialRecovery:
         return (
           <div className="btn-group dialog-actions">
-            <Button styling="outlined" onClick={retry} text="Retry" />
-            <Button styling="outlined" onClick={save} text="Recover" />
+            <Button className="btn-outlined" onClick={retry} text="Retry" />
+            <Button className="btn-outlined" onClick={save} text="Recover" />
           </div>
         );
 
       default:
         return (
           <div className="btn-group dialog-actions">
-            <Button styling="outlined" onClick={uiStore.closeLocationRecovery} text="Close" />
+            <Button className="btn-outlined" onClick={uiStore.closeLocationRecovery} text="Close" />
           </div>
         );
     }

@@ -1,12 +1,4 @@
 ///////////////////////////////// Media Queries /////////////////////////////////
-@media (max-width: 960px) {
-  .toolbar-button-text:not(.always) {
-    margin: 0;
-    text-indent: -100vw;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-}
 
 ///////////////////////////////// Misc /////////////////////////////////
 // Error boundary (when app crashes)

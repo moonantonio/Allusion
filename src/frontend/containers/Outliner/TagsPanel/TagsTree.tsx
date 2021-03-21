@@ -7,7 +7,7 @@ import { ClientTag, ROOT_TAG_ID } from 'src/entities/Tag';
 import StoreContext from 'src/frontend/contexts/StoreContext';
 import UiStore from 'src/frontend/stores/UiStore';
 import useContextMenu from 'src/frontend/hooks/useContextMenu';
-import { IconSet, Tree } from 'widgets';
+import { Checkbox, IconSet, Tree } from 'widgets';
 import { Toolbar, ToolbarButton, ContextMenu } from 'widgets/menus';
 import { ITreeItem, createBranchOnKeyDown, createLeafOnKeyDown } from 'widgets/Tree';
 import { TagRemoval } from 'src/frontend/components/RemovalAlert';
@@ -103,6 +103,9 @@ PreviewTag.classList.add('tag');
 PreviewTag.style.position = 'absolute';
 PreviewTag.style.top = '-100vh';
 document.body.appendChild(PreviewTag);
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const emptyFn = () => {};
 
 const TagItem = observer((props: ITagItemProps) => {
   const { nodeData, dispatch, expansion, isEditing, submit, pos, select, showContextMenu } = props;
@@ -259,6 +262,12 @@ const TagItem = observer((props: ITagItemProps) => {
       onDrop={handleDrop}
       onContextMenu={handleContextMenu}
     >
+      {!isEditing && (
+        <span onClick={handleSelect}>
+          <Checkbox label="" checked={uiStore.tagSelection.has(nodeData)} onChange={emptyFn} />
+        </span>
+      )}
+
       <span style={{ color: nodeData.viewColor }}>{IconSet.TAG}</span>
       <Label
         text={nodeData.name}
@@ -268,11 +277,6 @@ const TagItem = observer((props: ITagItemProps) => {
         onClick={handleQuickQuery}
         onDoubleClick={handleRename}
       />
-      {!isEditing && (
-        <button onClick={handleSelect} className="btn-icon">
-          {uiStore.tagSelection.has(nodeData) ? IconSet.SELECT_CHECKED : IconSet.SELECT}
-        </button>
-      )}
     </div>
   );
 });
@@ -521,7 +525,6 @@ const TagsTree = observer(() => {
         <Toolbar controls="tag-hierarchy">
           {uiStore.tagSelection.size > 0 ? (
             <ToolbarButton
-              showLabel="never"
               icon={IconSet.CLOSE}
               text="Clear"
               onClick={uiStore.clearTagSelection}
@@ -529,7 +532,6 @@ const TagsTree = observer(() => {
             />
           ) : (
             <ToolbarButton
-              showLabel="never"
               icon={IconSet.PLUS}
               text="New Tag"
               onClick={handleRootAddTag}

@@ -1,4 +1,3 @@
-import './toolbar.scss';
 import React, { useEffect, useRef } from 'react';
 
 import { Tooltip } from '../popovers';
@@ -53,7 +52,7 @@ interface IBaseButton {
   text: React.ReactText;
   icon: JSX.Element;
   onClick?: (event: React.MouseEvent) => void;
-  showLabel?: 'always' | 'never';
+  showLabel?: boolean;
   tooltip?: string;
 }
 
@@ -83,19 +82,20 @@ const ToolbarButton = (props: IToolbarButton) => {
     controls,
     haspopup,
   } = props;
-  const portalTriggerRef = useRef<HTMLSpanElement>(null);
+  const portalTriggerRef = useRef<HTMLButtonElement>(null);
   const content = (
-    <span ref={portalTriggerRef} className="toolbar-button-content">
-      <span className="toolbar-button-icon" aria-hidden>
+    <>
+      <span className="btn-content-icon" aria-hidden>
         {icon}
       </span>
-      <span className={`toolbar-button-text ${showLabel ?? ''}`}>{text}</span>
-    </span>
+      <span className={`btn-content-text ${showLabel ? '' : 'hidden'}`}>{text}</span>
+    </>
   );
   return (
     <button
+      ref={portalTriggerRef}
       id={id}
-      className="toolbar-button"
+      className="btn"
       onClick={disabled ? undefined : onClick}
       role={role}
       aria-pressed={pressed}

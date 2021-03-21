@@ -21,7 +21,6 @@ const enum Tooltip {
 export const SortCommand = ({ fileStore }: { fileStore: FileStore }) => {
   return (
     <MenuButton
-      showLabel="never"
       icon={IconSet.SORT}
       text="Sort"
       tooltip={Tooltip.Filter}
@@ -36,7 +35,6 @@ export const SortCommand = ({ fileStore }: { fileStore: FileStore }) => {
 export const ViewCommand = ({ uiStore }: { uiStore: UiStore }) => {
   return (
     <MenuButton
-      showLabel="never"
       icon={IconSet.THUMB_BG}
       text="View"
       tooltip={Tooltip.View}

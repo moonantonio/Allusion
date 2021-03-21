@@ -21,7 +21,7 @@ export const ClearDbButton = () => {
       placement="top"
       target={
         <Button
-          styling="outlined"
+          className="btn-outlined"
           icon={IconSet.CLEAR_DATABASE}
           text="Clear Database"
           onClick={() => setIsOpen(!isOpen)}
@@ -131,19 +131,19 @@ ${this.state.error}
           <ButtonGroup>
             <Button
               onClick={this.reloadApplication}
-              styling="outlined"
+              className="btn-outlined"
               icon={IconSet.RELOAD}
               text="Reload"
             />
             <Button
               onClick={this.viewInspector}
-              styling="outlined"
+              className="btn-outlined"
               icon={IconSet.CHROME_DEVTOOLS}
               text="Toggle DevTools"
             />
             <ClearDbButton />
             <Button
-              styling="outlined"
+              className="btn-outlined"
               onClick={this.openIssueURL}
               icon={IconSet.GITHUB}
               text="Create Issue"

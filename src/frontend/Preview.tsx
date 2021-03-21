@@ -34,14 +34,12 @@ const PreviewApp = observer(() => {
       <ErrorBoundary>
         <Toolbar id="toolbar" label="Preview Command Bar" controls="content-view">
           <ToolbarButton
-            showLabel="never"
             icon={IconSet.ARROW_LEFT}
             text="Previous Image"
             onClick={handleLeftButton}
             disabled={uiStore.firstItem === 0}
           />
           <ToolbarButton
-            showLabel="never"
             icon={IconSet.ARROW_RIGHT}
             text="Next Image"
             onClick={handleRightButton}

@@ -21,7 +21,7 @@ interface IToolbarSegmentButton {
   text: React.ReactText;
   icon: JSX.Element;
   onClick?: (event: React.MouseEvent) => void;
-  showLabel?: 'always' | 'never';
+  showLabel?: boolean;
   tooltip?: string;
   checked: boolean;
 }

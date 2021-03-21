@@ -4,8 +4,8 @@ import StoreContext from '../../contexts/StoreContext';
 
 import UiStore from 'src/frontend/stores/UiStore';
 import FileStore from 'src/frontend/stores/FileStore';
-import { IconSet } from 'widgets';
-import { ToolbarButton, ToolbarToggleButton } from 'widgets/menus';
+import { IconSet, Checkbox } from 'widgets';
+import { ToolbarButton } from 'widgets/menus';
 import { FileRemoval } from 'src/frontend/components/RemovalAlert';
 import TagFilesPopover from 'src/frontend/containers/AppToolbar/TagFilesPopover';
 import Searchbar from './Searchbar';
@@ -73,7 +73,7 @@ export const SlideModeCommand = observer(({ uiStore }: { uiStore: UiStore }) => 
   return (
     <>
       <ToolbarButton
-        showLabel="always"
+        showLabel
         icon={IconSet.ARROW_LEFT}
         onClick={uiStore.disableSlideMode}
         text="Back"
@@ -83,7 +83,6 @@ export const SlideModeCommand = observer(({ uiStore }: { uiStore: UiStore }) => 
       <div className="spacer" />
 
       <ToolbarButton
-        showLabel="never"
         icon={IconSet.INFO}
         onClick={uiStore.toggleInspector}
         checked={uiStore.isInspectorOpen}
@@ -106,13 +105,10 @@ const FileSelectionCommand = observer((props: { uiStore: UiStore; fileStore: Fil
   };
 
   return (
-    <ToolbarToggleButton
-      showLabel="always"
-      icon={allFilesSelected ? IconSet.SELECT_ALL_CHECKED : IconSet.SELECT_ALL}
-      onClick={handleToggleSelect}
-      pressed={allFilesSelected}
-      text={selectionCount}
-      tooltip={Tooltip.Select}
+    <Checkbox
+      checked={allFilesSelected}
+      label={`${selectionCount} file(s) selected`}
+      onChange={handleToggleSelect}
     />
   );
 });

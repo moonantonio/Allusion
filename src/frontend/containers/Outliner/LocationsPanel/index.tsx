@@ -509,7 +509,6 @@ const LocationsPanel = observer(() => {
         <h2 onClick={() => setCollapsed(!isCollapsed)}>Locations</h2>
         <Toolbar controls="location-list">
           <ToolbarButton
-            showLabel="never"
             icon={IconSet.PLUS}
             text="New Location"
             onClick={handleChooseWatchedDir}

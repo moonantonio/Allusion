@@ -69,7 +69,7 @@ export const AdvancedSearchDialog = observer(() => {
       </form>
       <div className="dialog-footer">
         <div id="functions-bar">
-          <Button text="Add" icon={IconSet.ADD} onClick={add} styling="outlined" />
+          <Button text="Add" icon={IconSet.ADD} onClick={add} className="btn-outlined" />
           <RadioGroup name="Match">
             <Radio
               label="Any"
@@ -86,8 +86,8 @@ export const AdvancedSearchDialog = observer(() => {
           </RadioGroup>
         </div>
         <div className="btn-group dialog-actions">
-          <Button text="Reset" onClick={reset} icon={IconSet.CLOSE} styling="outlined" />
-          <Button text="Search" onClick={search} icon={IconSet.SEARCH} styling="filled" />
+          <Button text="Reset" onClick={reset} icon={IconSet.CLOSE} className="btn-outlined" />
+          <Button text="Search" onClick={search} icon={IconSet.SEARCH} className="btn-filled" />
         </div>
       </div>
     </Dialog>

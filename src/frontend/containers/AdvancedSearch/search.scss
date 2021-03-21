@@ -14,11 +14,15 @@
     }
 
     > .btn {
+      --btn-width: 1.75rem;
+      --btn-height: 1.75rem;
+      --btn-min-width: 1.5rem;
+      --btn-min-height: 1.5rem;
+      --btn-margin: 0 0 0 0.5rem;
+
       flex-grow: 0;
-      margin-left: 0.5rem;
       line-height: 0;
       font-size: 1rem;
-      max-width: 2rem;
     }
   }
   select {

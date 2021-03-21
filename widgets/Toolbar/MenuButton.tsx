@@ -8,7 +8,7 @@ export interface IMenuButton {
   id: string;
   text: React.ReactText;
   icon: JSX.Element;
-  showLabel?: 'always' | 'never';
+  showLabel?: boolean;
   tooltip?: string;
   menuID: string;
   children: MenuChildren;

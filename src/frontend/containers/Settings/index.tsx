@@ -49,9 +49,14 @@ const Appearance = observer(() => {
 
         <div className="scale-widget">
           <ButtonGroup>
-            <Button onClick={decrementZoomFactor} text="-" styling="outlined" />
-            <Button onClick={incrementZoomFactor} text="+" styling="outlined" />
-            <Button onClick={resetZoomFactor} icon={IconSet.RELOAD} text="" styling="outlined" />
+            <Button onClick={decrementZoomFactor} text="-" className="btn-outlined" />
+            <Button onClick={incrementZoomFactor} text="+" className="btn-outlined" />
+            <Button
+              onClick={resetZoomFactor}
+              icon={IconSet.RELOAD}
+              text=""
+              className="btn-outlined"
+            />
           </ButtonGroup>
           <span>Scale: {Math.round(100 * localZoomFactor)}%</span>
         </div>
@@ -175,7 +180,7 @@ const Advanced = observer(() => {
           <legend>Thumbnail Directory</legend>
           <div className="input-file">
             <span className="input input-file-value">{thumbnailDirectory}</span>
-            <Button styling="filled" text="Browse" onClick={browseThumbnailDirectory} />
+            <Button className="btn-filled" text="Browse" onClick={browseThumbnailDirectory} />
           </div>
         </fieldset>
       </div>
@@ -185,7 +190,7 @@ const Advanced = observer(() => {
         <ClearDbButton />
         <Button
           onClick={RendererMessenger.toggleDevTools}
-          styling="outlined"
+          className="btn-outlined"
           icon={IconSet.CHROME_DEVTOOLS}
           text="Toggle DevTools"
         />
