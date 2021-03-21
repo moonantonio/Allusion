@@ -12,15 +12,9 @@
   top: 0.75rem;
 }
 
-[data-os='darwin'] #outliner-content {
-  top: var(--toolbar-height);
-}
-
 // On Macs, the traffic lights take up the space of the toolbar. For other platform, extend outliner to the top
-[data-os='darwin'] {
-  #outliner-content {
-    top: var(--content-top);
-  }
+[data-os='darwin'] #outliner-content {
+  top: var(--content-top);
 }
 
 .section {
