@@ -1,9 +1,0 @@
-- fix button styles
-  - separate each button into single component
-  - remove --accent-color-blue
-- constant values should be SASS variables
-- list no tooltip
-- list show optionally columns
-- list resize columns
-- better error handling
-- should selection be toggable?
