@@ -27,7 +27,7 @@ const Toggle = (props: ICheckbox) => {
 };
 
 const Checkbox = (props: ICheckbox) => {
-  const { label, defaultChecked, checked, onChange } = props;
+  const { label, defaultChecked, checked, onChange, onClick } = props;
   return (
     <label>
       <input
@@ -35,6 +35,7 @@ const Checkbox = (props: ICheckbox) => {
         defaultChecked={defaultChecked}
         checked={checked}
         onChange={onChange}
+        onClick={onClick}
       />
       {label}
     </label>

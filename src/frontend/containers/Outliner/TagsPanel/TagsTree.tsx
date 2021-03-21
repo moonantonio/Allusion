@@ -263,9 +263,12 @@ const TagItem = observer((props: ITagItemProps) => {
       onContextMenu={handleContextMenu}
     >
       {!isEditing && (
-        <span onClick={handleSelect}>
-          <Checkbox label="" checked={uiStore.tagSelection.has(nodeData)} onChange={emptyFn} />
-        </span>
+        <Checkbox
+          label=""
+          checked={uiStore.tagSelection.has(nodeData)}
+          onChange={emptyFn}
+          onClick={handleSelect}
+        />
       )}
 
       <span style={{ color: nodeData.viewColor }}>{IconSet.TAG}</span>
