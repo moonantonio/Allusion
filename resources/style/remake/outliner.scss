@@ -9,7 +9,10 @@
   bottom: 2rem;
   left: 0rem;
   right: 0rem;
+  top: 0.75rem;
+}
 
+[data-os='darwin'] #outliner-content {
   top: var(--toolbar-height);
 }
 
