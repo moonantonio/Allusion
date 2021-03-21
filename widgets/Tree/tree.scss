@@ -53,21 +53,8 @@
     }
   }
 
-  // &[aria-selected='true'] > .label {
-  //   color: var(--accent-color-blue);
-  //   background-color: transparent;
-
-  //   [class*='custom-icon'] {
-  //     color: var(--accent-color-blue);
-  //   }
-  // }
-
   &:focus {
     outline: none;
-
-    &[aria-selected='true'] > .label {
-      background-color: transparent;
-    }
 
     > .label {
       background-color: var(--hover-color);
