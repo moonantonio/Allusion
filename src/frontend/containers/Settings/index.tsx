@@ -1,8 +1,8 @@
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { RendererMessenger } from 'src/Messaging';
 import { WINDOW_STORAGE_KEY } from 'src/renderer';
-import { Button, ButtonGroup, IconSet, Radio, RadioGroup, Toggle } from 'widgets';
+import { Button, ButtonGroup, IconButton, IconSet, Radio, RadioGroup, Toggle } from 'widgets';
 import StoreContext from '../../contexts/StoreContext';
 import { moveThumbnailDir } from '../../ThumbnailGeneration';
 import { getThumbnailPath, isDirEmpty } from '../../utils';
@@ -13,20 +13,6 @@ import Tabs, { TabItem } from './Tabs';
 
 const Appearance = observer(() => {
   const { uiStore } = useContext(StoreContext);
-  const [localZoomFactor, setLocalZoomFactor] = useState(RendererMessenger.getZoomFactor());
-
-  const incrementZoomFactor = useCallback(() => {
-    RendererMessenger.setZoomFactor(localZoomFactor + 0.1);
-    setLocalZoomFactor(localZoomFactor + 0.1);
-  }, [localZoomFactor]);
-  const decrementZoomFactor = useCallback(() => {
-    RendererMessenger.setZoomFactor(localZoomFactor - 0.1);
-    setLocalZoomFactor(localZoomFactor - 0.1);
-  }, [localZoomFactor]);
-  const resetZoomFactor = useCallback(() => {
-    RendererMessenger.setZoomFactor(1);
-    setLocalZoomFactor(1);
-  }, []);
 
   return (
     <>
@@ -45,21 +31,7 @@ const Appearance = observer(() => {
           label="Full screen"
         />
 
-        <br />
-
-        <div className="scale-widget">
-          <ButtonGroup>
-            <Button onClick={decrementZoomFactor} text="-" className="btn-outlined" />
-            <Button onClick={incrementZoomFactor} text="+" className="btn-outlined" />
-            <Button
-              onClick={resetZoomFactor}
-              icon={IconSet.RELOAD}
-              text=""
-              className="btn-outlined"
-            />
-          </ButtonGroup>
-          <span>Scale: {Math.round(100 * localZoomFactor)}%</span>
-        </div>
+        <Zoom />
       </fieldset>
 
       <h3>Thumbnail</h3>
@@ -107,6 +79,31 @@ const Appearance = observer(() => {
     </>
   );
 });
+
+const Zoom = () => {
+  const [localZoomFactor, setLocalZoomFactor] = useState(RendererMessenger.getZoomFactor());
+
+  useEffect(() => {
+    RendererMessenger.setZoomFactor(localZoomFactor);
+  }, [localZoomFactor]);
+
+  return (
+    <div className="zoom-widget">
+      <strong>Zoom</strong>
+      <IconButton
+        icon={<span>-</span>}
+        onClick={() => setLocalZoomFactor(localZoomFactor - 0.1)}
+        text="zoom out"
+      />
+      <span>{Math.round(100 * localZoomFactor)}%</span>
+      <IconButton
+        icon={<span>+</span>}
+        onClick={() => setLocalZoomFactor(localZoomFactor + 0.1)}
+        text="zoom in"
+      />
+    </div>
+  );
+};
 
 const BackgroundProcesses = () => (
   <>
