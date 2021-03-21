@@ -1,3 +1,5 @@
+@import '~resources/style/remake/colours.scss';
+
 .btn-group {
   display: flex;
   align-items: center;
@@ -101,11 +103,11 @@
 }
 
 .btn-filled {
-  --btn-background: var(--accent-color-blue);
+  --btn-background: $accent-color-blue;
   --btn-color: white;
 }
 
 .btn-outlined {
   --btn-border: 1px solid currentColor;
-  --btn-color: var(--accent-color-blue);
+  --btn-color: $accent-color-blue;
 }

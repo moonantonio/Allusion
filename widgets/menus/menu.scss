@@ -1,3 +1,5 @@
+@import '~resources/style/remake/colours.scss';
+
 [role='menu'],
 [role='listbox'] {
   list-style: none;
@@ -46,7 +48,7 @@ a[role='menuitem'] {
 
 [role='menuitemradio'][aria-checked='true'] {
   color: var(--text-color-strong);
-  background: var(--accent-color-blue);
+  background: $accent-color-blue;
 }
 
 [role='menuitemcheckbox'][aria-checked='true'],

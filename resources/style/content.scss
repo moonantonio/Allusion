@@ -1,4 +1,8 @@
 ///////////////////////////////// Content area /////////////////////////////////
+#content-view {
+  --thumbnail-size: 160px;
+}
+
 #gallery-content {
   flex: 1;
 
@@ -16,21 +20,12 @@
 // WIP > better general thumbsize. See if we kind find better size ratio for different screensize.
 // We'll have less loss of space perhaps
 .thumbnail-small {
-  /* --thumbnail-size: calc(100vw / 10); */
-  /* --thumbnail-size: calc(calc(100vw / 10) - calc(10 * var(--thumbnail-margin))); */
-  // --thumbnail-size: 82px;
   --thumbnail-size: 160px;
 }
 .thumbnail-medium {
-  /* --thumbnail-size: calc(100vw / 6); */
-  /* --thumbnail-size: calc(calc(100vw / 6) - calc(6 * var(--thumbnail-margin))); */
-  // --thumbnail-size: 182px;
   --thumbnail-size: 240px;
 }
 .thumbnail-large {
-  /* --thumbnail-size: calc(100vw / 4); */
-  /* --thumbnail-size: calc(calc(100vw / 4) - calc(4 * var(--thumbnail-margin))); */
-  // --thumbnail-size: 282px;
   --thumbnail-size: 320px;
 }
 
@@ -41,12 +36,12 @@
   .grid,
   .masonry {
     [aria-selected='true'] > .thumbnail {
-      background-color: var(--accent-color-yellow);
+      background-color: $accent-color-yellow;
     }
   }
 
   .list [aria-selected='true'] {
-    background-color: rgba(255, 193, 47, 0.3);
+    background-color: rgba($accent-color-yellow, 0.3);
   }
 }
 
@@ -72,12 +67,9 @@
   border: 0.0625rem solid var(--border-dark);
   border-radius: 0.25rem;
 
-  transition: background-color 0.2s $pt-transition-cubic2;
-
   // This acts as the border-radius, but also for child elements
   :first-child {
     clip-path: inset(0 round 0.125rem);
-    transition: clip-path 0.2s $pt-transition-cubic2;
     pointer-events: none;
   }
 
@@ -92,7 +84,7 @@
   }
 
   &[data-dnd-target='true'] {
-    background-color: var(--accent-color-yellow);
+    background-color: $accent-color-yellow;
 
     img {
       clip-path: inset(0.5rem round 0.125rem);
@@ -102,7 +94,7 @@
 
 [aria-selected='true'] > .thumbnail {
   // If selected, show a blue border
-  background-color: var(--accent-color-blue);
+  background-color: $accent-color-blue;
   > img,
   > .image-error {
     clip-path: inset(0.25rem round 0.125rem); // old design
@@ -110,7 +102,7 @@
 
   // If selected AND drop target: big yellow border
   &[data-dnd-target='true'] {
-    background-color: var(--accent-color-yellow);
+    background-color: $accent-color-yellow;
     > img,
     > .image-error {
       clip-path: inset(0.5rem round 0.125rem);
@@ -118,7 +110,7 @@
   }
 
   > .image-error {
-    border: 0.25rem solid var(--accent-color-red); // new design
+    border: 0.25rem solid $accent-color-red; // new design
   }
 }
 
@@ -137,7 +129,7 @@
   height: 2.5rem;
   top: 0.5rem;
   left: calc(var(--thumbnail-size) - 3rem);
-  color: var(--accent-color-red);
+  color: $accent-color-red;
 
   svg {
     width: 2rem !important;
@@ -176,7 +168,7 @@
   margin: 25%;
   border-radius: 50%;
   border: 0.5rem solid var(--background-color);
-  border-top-color: var(--accent-color-blue);
+  border-top-color: $accent-color-blue;
   animation: 1.5s spin infinite linear;
 }
 
@@ -234,7 +226,7 @@
     }
 
     &[aria-selected='true'] {
-      background-color: var(--accent-color-blue-transp);
+      background-color: $accent-color-blue-transp;
     }
 
     &[data-dnd-target='true'] {
@@ -346,7 +338,6 @@
   .thumbnail-tags {
     white-space: initial;
     border-radius: 0 0 0.25rem 0.25rem;
-    transition: 0.25s $pt-transition-cubic2;
     max-height: 2.8em;
     width: var(--thumbnail-size);
   }
@@ -437,5 +428,17 @@
     position: absolute;
     pointer-events: none;
     z-index: -1;
+  }
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
   }
 }

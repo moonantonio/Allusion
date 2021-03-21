@@ -1,3 +1,4 @@
+import './toaster.scss';
 import React from 'react';
 import { action, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';

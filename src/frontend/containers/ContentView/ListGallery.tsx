@@ -110,8 +110,6 @@ interface IListItem {
   style: React.CSSProperties;
   isScrolling: true;
   uiStore: UiStore;
-  // onClick: (e: React.MouseEvent) => void;
-  // onDoubleClick: (e: React.MouseEvent) => void;
   submitCommand: (command: GalleryCommand) => void;
 }
 

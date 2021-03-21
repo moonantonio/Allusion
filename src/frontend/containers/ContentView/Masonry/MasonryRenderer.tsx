@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ViewMethod } from 'src/frontend/stores/UiStore';
 import { debounce } from 'src/frontend/utils';
 import { getThumbnailSize, ILayoutProps } from '../Gallery';
@@ -47,8 +47,6 @@ const MasonryRenderer = observer(
 
     const viewMethod = uiStore.method as SupportedViewMethod;
     const numImages = fileStore.fileList.length;
-
-    const debouncedRecompute = useMemo(() => debounce(worker.recompute, 200), []);
 
     // TODO: vertical keyboard navigation with lastSelectionIndex
 

@@ -1,0 +1,35 @@
+@import '~resources/style/remake/colours.scss';
+
+#toaster {
+  position: absolute;
+  right: 1rem;
+  bottom: 0rem;
+}
+
+// TODO: Fix this when we have our own custom toaster, currently intefering with Blueprint
+.toast {
+  background: $accent-color-blue;
+  color: white;
+  width: 22.5rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.5rem;
+  z-index: 1;
+  border-radius: 0.25rem;
+  box-shadow: 3px 4px 6px 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span {
+    height: 1rem;
+    margin: 0.25rem;
+  }
+
+  button {
+    color: white;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}

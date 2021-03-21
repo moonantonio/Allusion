@@ -1,3 +1,5 @@
+@import '~resources/style/remake/colours.scss';
+
 input[type='checkbox'] {
   -webkit-appearance: none;
   appearance: none;
@@ -10,8 +12,8 @@ input[type='checkbox'] {
   border-radius: 12.25%;
 
   &:checked {
-    background-color: var(--accent-color-blue);
-    border-color: var(--accent-color-blue);
+    background-color: $accent-color-blue;
+    border-color: $accent-color-blue;
 
     &:hover {
       filter: saturate(200%);
@@ -41,7 +43,7 @@ input[type='checkbox'] {
 
   &:focus {
     outline: none;
-    border-color: var(--accent-color-blue);
+    border-color: $accent-color-blue;
   }
 }
 
@@ -66,7 +68,7 @@ input[type='checkbox'][data-toggle='true'] {
   }
 
   &:focus::before {
-    background-color: var(--accent-color-blue);
+    background-color: $accent-color-blue;
   }
 
   &:checked::before {

@@ -34,7 +34,7 @@
     }
 
     &:last-child:hover {
-      background-color: var(--accent-color-red);
+      background-color: $accent-color-red;
       color: white;
     }
   }

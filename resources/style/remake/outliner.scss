@@ -90,8 +90,8 @@
     --btn-width: 1rem;
     --btn-padding: 0;
     --btn-border-radius: 0.125rem;
-    --btn-pressed-color: var(--accent-color-blue);
-    --btn-checked-color: var(--accent-color-blue);
+    --btn-pressed-color: $accent-color-blue;
+    --btn-checked-color: $accent-color-blue;
   }
 }
 
@@ -108,17 +108,17 @@
   }
 
   &[data-dnd-target='true'] {
-    color: var(--accent-color-blue);
-    border: 2px solid var(--accent-color-blue);
+    color: $accent-color-blue;
+    border: 2px solid $accent-color-blue;
 
     &.top {
       border: none;
-      border-top: 2px solid var(--accent-color-blue);
+      border-top: 2px solid $accent-color-blue;
     }
 
     &.bottom {
       border: none;
-      border-bottom: 2px solid var(--accent-color-blue);
+      border-bottom: 2px solid $accent-color-blue;
     }
   }
 
@@ -164,10 +164,10 @@
     --btn-padding: 0.25rem;
     --btn-margin: 0.5rem 0.25rem;
     --btn-border-radius: 0.125rem;
-    --btn-pressed-color: var(--accent-color-blue);
-    --btn-checked-color: var(--accent-color-blue);
-    --btn-active-color: var(--accent-color-blue);
-    --btn-hot-color: var(--accent-color-blue);
+    --btn-pressed-color: $accent-color-blue;
+    --btn-checked-color: $accent-color-blue;
+    --btn-active-color: $accent-color-blue;
+    --btn-hot-color: $accent-color-blue;
   }
 
   span {
